@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escala do Centro de Saúde</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            color: #333;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #60a5fa;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background-color: #fff;
+                margin: 0;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-area {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border: none;
+                overflow: hidden; /* Prevent scrollbars in print */
+            }
+            .print-area table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 8pt; /* Adjust font size for printing */
+            }
+            .print-area th, .print-area td {
+                border: 1px solid #ccc;
+                padding: 2px 4px; /* Smaller padding for printing */
+                text-align: center;
+            }
+            .print-area .weekend, .print-area .holiday {
+                background-color: #e0e0e0 !important; /* Ensure darker tone for print */
+            }
+            .print-area .vacation {
+                background-color: #b3e0ff !important; /* Ensure vacation color for print */
+            }
+            .print-area .legend {
+                position: fixed;
+                bottom: 10mm;
+                left: 10mm;
+                right: 10mm;
+                width: auto;
+                font-size: 7pt;
+                text-align: left;
+                border-top: 1px solid #ccc;
+                padding-top: 5mm;
+            }
+            /* Force landscape orientation */
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div id="app" class="max-w-7xl mx-auto bg-white rounded-lg shadow-xl p-6 md:p-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-blue-700 mb-8">Escala do Centro de Saúde</h1>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-3">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <p class="text-lg text-gray-700">Carregando...</p>
+            </div>
+        </div>
+
+        <!-- Employee Management Section -->
+        <div class="mb-8 p-6 bg-blue-50 rounded-lg shadow-md no-print">
+            <h2 class="text-2xl font-semibold text-blue-600 mb-4">Gerenciar Funcionários</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <input type="text" id="employee-name" placeholder="Nome do Funcionário" class="p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" id="employee-role" placeholder="Cargo" class="p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" id="employee-council" placeholder="Registro do Conselho" class="p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <button id="add-employee-btn" class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out shadow-lg">Adicionar Funcionário</button>
+
+            <div class="mt-6">
+                <h3 class="text-xl font-medium text-blue-500 mb-3">Funcionários Cadastrados:</h3>
+                <ul id="employee-list" class="space-y-2">
+                    <!-- Employee items will be loaded here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Schedule Display Section -->
+        <div class="mb-8 p-6 bg-green-50 rounded-lg shadow-md print-area">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 no-print">
+                <h2 class="text-2xl font-semibold text-green-700 mb-4 md:mb-0">Escala Mensal: <span id="current-month-year"></span></h2>
+                <div class="flex space-x-2">
+                    <button id="prev-month-btn" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition duration-300 ease-in-out">Mês Anterior</button>
+                    <button id="next-month-btn" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition duration-300 ease-in-out">Próximo Mês</button>
+                    <button id="fetch-holidays-btn" class="bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 transition duration-300 ease-in-out shadow-lg">Buscar Feriados Nacionais</button>
+                    <button id="copy-schedule-btn" class="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-300 ease-in-out shadow-lg">Copiar Escala p/ Próximo Mês</button>
+                    <button id="view-in-new-window-btn" class="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-300 ease-in-out shadow-lg">Visualizar em Nova Janela</button>
+                    <button id="print-schedule-btn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 ease-in-out shadow-lg">Imprimir Escala</button>
+                </div>
+            </div>
+
+            <!-- Holidays Input -->
+            <div class="mb-6 p-4 bg-yellow-50 rounded-md no-print">
+                <h3 class="text-xl font-medium text-yellow-700 mb-2">Feriados do Mês (YYYY-MM-DD, separados por vírgula):</h3>
+                <input type="text" id="holidays-input" placeholder="Ex: 2025-07-04, 2025-07-15" class="w-full p-3 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                <button id="save-holidays-btn" class="mt-3 bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 transition duration-300 ease-in-out shadow-lg">Salvar Feriados</button>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg shadow-inner">
+                <table id="schedule-table" class="min-w-full bg-white border border-gray-200">
+                    <thead>
+                        <tr class="bg-blue-100 text-blue-800">
+                            <th class="py-2 px-3 border-r border-gray-200 sticky left-0 bg-blue-100 z-10">Nome</th>
+                            <th class="py-2 px-3 border-r border-gray-200 sticky left-[120px] bg-blue-100 z-10">Função</th>
+                            <th class="py-2 px-3 border-r border-gray-200 sticky left-[200px] bg-blue-100 z-10">Conselho</th>
+                            <!-- Days will be generated here -->
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-body">
+                        <!-- Schedule rows will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Monthly Observations -->
+            <div class="mt-8 p-4 bg-purple-50 rounded-lg shadow-md no-print">
+                <h3 class="text-xl font-medium text-purple-700 mb-2">Observações do Mês:</h3>
+                <textarea id="monthly-observations" class="w-full p-3 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 h-24" placeholder="Adicione observações importantes para este mês..."></textarea>
+                <button id="save-observations-btn" class="mt-3 bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-300 ease-in-out shadow-lg">Salvar Observações</button>
+            </div>
+        </div>
+
+        <!-- Legend Section (visible only on print) -->
+        <div class="legend print-only hidden">
+            <h3 class="text-lg font-semibold mb-2">Legenda:</h3>
+            <div class="grid grid-cols-2 gap-x-4">
+                <span>F: Farmácia</span>
+                <span>SOE: Sala de Observação</span>
+                <span>P: Presente</span>
+                <span>C: Curativo</span>
+                <span>BR: Acolhimento Baixo Risco</span>
+                <span>LM: Licença Médica</span>
+                <span>FO: Folga</span>
+                <span>E: ECG</span>
+                <span>V: Vacina</span>
+            </div>
+        </div>
+
+        <!-- Modals -->
+
+        <!-- Assignment Modal -->
+        <div id="assignment-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 no-print">
+            <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+                <h3 class="text-2xl font-bold text-blue-700 mb-6">Atribuir Função</h3>
+                <p class="mb-4 text-gray-700"><span id="modal-employee-name" class="font-semibold"></span> - Dia <span id="modal-day" class="font-semibold"></span></p>
+
+                <div class="mb-4">
+                    <label for="assignment-select" class="block text-gray-700 text-sm font-bold mb-2">Função:</label>
+                    <select id="assignment-select" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Selecione uma função</option>
+                        <option value="F">F (Farmácia)</option>
+                        <option value="SOE">SOE (Sala de Observação)</option>
+                        <option value="P">P (Presente)</option>
+                        <option value="C">C (Curativo)</option>
+                        <option value="BR">BR (Acolhimento Baixo Risco)</option>
+                        <option value="LM">LM (Licença Médica)</option>
+                        <option value="FO">FO (Folga)</option>
+                        <option value="E">E (ECG)</option>
+                        <option value="V">V (Vacina)</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="start-date" class="block text-gray-700 text-sm font-bold mb-2">Data de Início:</label>
+                    <input type="date" id="start-date" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label for="end-date" class="block text-gray-700 text-sm font-bold mb-2">Data de Fim:</label>
+                    <input type="date" id="end-date" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button id="cancel-assignment-btn" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition duration-300 ease-in-out">Cancelar</button>
+                    <button id="save-assignment-btn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out shadow-lg">Salvar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vacation Modal -->
+        <div id="vacation-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 no-print">
+            <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+                <h3 class="text-2xl font-bold text-blue-700 mb-6">Definir Férias</h3>
+                <p class="mb-4 text-gray-700"><span id="vacation-modal-employee-name" class="font-semibold"></span></p>
+
+                <div class="mb-4">
+                    <label for="vacation-start-date" class="block text-gray-700 text-sm font-bold mb-2">Data de Início das Férias:</label>
+                    <input type="date" id="vacation-start-date" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label for="vacation-end-date" class="block text-gray-700 text-sm font-bold mb-2">Data de Fim das Férias:</label>
+                    <input type="date" id="vacation-end-date" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button id="cancel-vacation-btn" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition duration-300 ease-in-out">Cancelar</button>
+                    <button id="save-vacation-btn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out shadow-lg">Salvar Férias</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Box -->
+        <div id="message-box" class="hidden fixed top-4 right-4 bg-blue-600 text-white p-4 rounded-md shadow-lg z-50">
+            <p id="message-text"></p>
+        </div>
+
+        <!-- Confirm Delete Modal -->
+        <div id="confirm-delete-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 no-print">
+            <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
+                <h3 class="text-xl font-bold text-red-700 mb-6">Confirmar Exclusão</h3>
+                <p class="mb-6 text-gray-700">Tem certeza que deseja remover <span id="delete-employee-name" class="font-semibold"></span>?</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancel-delete-btn" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition duration-300 ease-in-out">Cancelar</button>
+                    <button id="confirm-delete-btn" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-300 ease-in-out shadow-lg">Remover</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase
+        let app;
+        let db;
+        let auth;
+        let userId;
+        // Remova ou comente a linha abaixo se for definir diretamente
+        // let appId; 
+
+        // Substitua este bloco pelo seu firebaseConfig real
+        const firebaseConfig = {
+          apiKey: "AIzaSyALs6IeL242UJH7uXpa-0mQq_CN_RA-xWA",
+          authDomain: "escalasaudeapp.firebaseapp.com",
+          projectId: "escalasaudeapp",
+          storageBucket: "escalasaudeapp.firebasestorage.app",
+          messagingSenderId: "1040621794903",
+          appId: "1:1040621794903:web:61518f984286e11fb29512",
+          measurementId: "G-YHH987DD5J"
+        };
+        // Defina appId a partir do firebaseConfig
+        appId = firebaseConfig.appId;
+
+        // Current schedule month and year
+        let currentMonth;
+        let currentYear;
+
+        // Currently selected employee and day for assignment
+        let selectedEmployeeId = null;
+        let selectedDay = null;
+        let selectedEmployeeName = null;
+
+        // DOM Elements
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const employeeNameInput = document.getElementById('employee-name');
+        const employeeRoleInput = document.getElementById('employee-role');
+        const employeeCouncilInput = document.getElementById('employee-council');
+        const addEmployeeBtn = document.getElementById('add-employee-btn');
+        const employeeList = document.getElementById('employee-list');
+        const currentMonthYearSpan = document.getElementById('current-month-year');
+        const prevMonthBtn = document.getElementById('prev-month-btn');
+        const nextMonthBtn = document.getElementById('next-month-btn');
+        const scheduleTable = document.getElementById('schedule-table');
+        const scheduleBody = document.getElementById('schedule-body');
+        const printScheduleBtn = document.getElementById('print-schedule-btn');
+        const holidaysInput = document.getElementById('holidays-input');
+        const saveHolidaysBtn = document.getElementById('save-holidays-btn');
+        const monthlyObservationsTextarea = document.getElementById('monthly-observations');
+        const saveObservationsBtn = document.getElementById('save-observations-btn');
+
+        // New DOM elements for new buttons
+        const fetchHolidaysBtn = document.getElementById('fetch-holidays-btn');
+        const copyScheduleBtn = document.getElementById('copy-schedule-btn');
+        const viewInNewWindowBtn = document.getElementById('view-in-new-window-btn'); // New button element
+
+        // Assignment Modal Elements
+        const assignmentModal = document.getElementById('assignment-modal');
+        const modalEmployeeName = document.getElementById('modal-employee-name');
+        const modalDay = document.getElementById('modal-day');
+        const assignmentSelect = document.getElementById('assignment-select');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const cancelAssignmentBtn = document.getElementById('cancel-assignment-btn');
+        const saveAssignmentBtn = document.getElementById('save-assignment-btn');
+
+        // Vacation Modal Elements
+        const vacationModal = document.getElementById('vacation-modal');
+        const vacationModalEmployeeName = document.getElementById('vacation-modal-employee-name');
+        const vacationStartDateInput = document.getElementById('vacation-start-date');
+        const vacationEndDateInput = document.getElementById('vacation-end-date');
+        const cancelVacationBtn = document.getElementById('cancel-vacation-btn');
+        const saveVacationBtn = document.getElementById('save-vacation-btn');
+
+        // Message Box Elements
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        // Confirm Delete Modal Elements
+        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+        const deleteEmployeeNameSpan = document.getElementById('delete-employee-name');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        let employeeToDeleteId = null;
+
+        // Helper function to show messages
+        function showMessage(message, type = 'success') {
+            messageText.textContent = message;
+            messageBox.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg z-50 ${type === 'error' ? 'bg-red-600' : 'bg-blue-600'} text-white`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            console.log("Initializing Firebase...");
+            loadingIndicator.classList.remove('hidden');
+            try {
+                // appId e firebaseConfig já estão definidos globalmente acima
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                console.log("Firebase app, db, auth initialized.");
+
+                // Sign in anonymously or with custom token
+                if (typeof __initial_auth_token !== 'undefined') {
+                    console.log("Attempting sign in with custom token...");
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    console.log("Attempting anonymous sign in...");
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User signed in. User ID:", userId);
+                        // Initialize current month and year
+                        const today = new Date();
+                        currentMonth = today.getMonth() + 1; // Month is 0-indexed
+                        currentYear = today.getFullYear();
+                        setupRealtimeListeners();
+                        renderCurrentMonth();
+                        console.log("Auth state changed, listeners set up, month rendered.");
+                    } else {
+                        console.log("No user signed in.");
+                        showMessage("Erro de autenticação. Por favor, recarregue a página.", "error");
+                    }
+                    loadingIndicator.classList.add('hidden');
+                });
+
+            } catch (error) {
+                console.error("Erro ao inicializar Firebase:", error);
+                showMessage(`Erro ao inicializar o aplicativo: ${error.message}`, "error");
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // Setup real-time listeners for employees and schedules
+        function setupRealtimeListeners() {
+            console.log("Setting up real-time listeners...");
+            // Listen for employee changes
+            const employeesColRef = collection(db, `artifacts/${appId}/users/${userId}/employees`);
+            onSnapshot(employeesColRef, (snapshot) => {
+                console.log("Employee data received from Firestore.");
+                const employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderEmployeeList(employees);
+                renderSchedule(employees); // Re-render schedule if employees change
+            }, (error) => {
+                console.error("Erro ao ouvir funcionários:", error);
+                showMessage("Erro ao carregar funcionários em tempo real.", "error");
+            });
+
+            // Listen for schedule changes for the current month
+            // This listener will be updated when currentMonth/currentYear changes
+            // We'll manage this in renderCurrentMonth to avoid multiple listeners
+        }
+
+        let currentScheduleUnsubscribe = null; // To manage schedule listener
+
+        async function renderCurrentMonth() {
+            console.log(`Rendering month: ${currentMonth}/${currentYear}`);
+            currentMonthYearSpan.textContent = `${getMonthName(currentMonth)} de ${currentYear}`;
+
+            // Unsubscribe from previous schedule listener if exists
+            if (currentScheduleUnsubscribe) {
+                currentScheduleUnsubscribe();
+                console.log("Unsubscribed from previous schedule listener.");
+            }
+
+            // Set up new listener for the current month's schedule
+            const scheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+            currentScheduleUnsubscribe = onSnapshot(scheduleDocRef, async (docSnap) => {
+                console.log("Schedule data received from Firestore.");
+                let scheduleData = {};
+                let holidays = [];
+                let observations = "";
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    scheduleData = data.data || {};
+                    holidays = data.holidays || [];
+                    observations = data.observations || "";
+                }
+
+                holidaysInput.value = holidays.join(', ');
+                monthlyObservationsTextarea.value = observations;
+
+                // Fetch employees to render the schedule
+                const employeesSnapshot = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/employees`));
+                const employees = employeesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                renderSchedule(employees, scheduleData, holidays);
+                console.log("Schedule rendered with latest data.");
+            }, (error) => {
+                console.error("Erro ao ouvir a escala:", error);
+                showMessage("Erro ao carregar a escala em tempo real.", "error");
+            });
+        }
+
+        // Add Employee
+        addEmployeeBtn.addEventListener('click', async () => {
+            console.log("Add Employee button clicked.");
+            if (!userId) {
+                showMessage('Erro: Usuário não autenticado. Por favor, aguarde o carregamento ou recarregue a página.', 'error');
+                console.error("Attempted to add employee without userId.");
+                return;
+            }
+            const name = employeeNameInput.value.trim();
+            const role = employeeRoleInput.value.trim();
+            const council = employeeCouncilInput.value.trim();
+
+            if (name && role && council) {
+                try {
+                    loadingIndicator.classList.remove('hidden');
+                    console.log("Adding employee to Firestore...");
+                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/employees`), {
+                        name,
+                        role,
+                        councilRegistration: council
+                    });
+                    employeeNameInput.value = '';
+                    employeeRoleInput.value = '';
+                    employeeCouncilInput.value = '';
+                    showMessage('Funcionário adicionado com sucesso!');
+                    console.log("Employee added successfully.");
+                } catch (e) {
+                    console.error("Erro ao adicionar funcionário: ", e);
+                    showMessage(`Erro ao adicionar funcionário: ${e.message}`, 'error'); // More specific error
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                }
+            } else {
+                showMessage('Por favor, preencha todos os campos do funcionário.', 'error');
+                console.warn("Attempted to add employee with empty fields.");
+            }
+        });
+
+        // Render Employee List
+        function renderEmployeeList(employees) {
+            employeeList.innerHTML = '';
+            if (employees.length === 0) {
+                employeeList.innerHTML = '<li class="text-gray-500">Nenhum funcionário cadastrado.</li>';
+                return;
+            }
+            employees.forEach(employee => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
+                li.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-800">${employee.name}</p>
+                        <p class="text-sm text-gray-600">${employee.role} - ${employee.councilRegistration}</p>
+                    </div>
+                    <button data-id="${employee.id}" data-name="${employee.name}" class="remove-employee-btn bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition duration-300 ease-in-out text-sm">Remover</button>
+                `;
+                employeeList.appendChild(li);
+            });
+
+            document.querySelectorAll('.remove-employee-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    employeeToDeleteId = event.target.dataset.id;
+                    deleteEmployeeNameSpan.textContent = event.target.dataset.name;
+                    confirmDeleteModal.classList.remove('hidden');
+                });
+            });
+        }
+
+        // Confirm Delete Employee
+        confirmDeleteBtn.addEventListener('click', async () => {
+            console.log("Confirm Delete button clicked.");
+            if (employeeToDeleteId) {
+                try {
+                    loadingIndicator.classList.remove('hidden');
+                    console.log(`Deleting employee: ${employeeToDeleteId}`);
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/employees`, employeeToDeleteId));
+                    showMessage('Funcionário removido com sucesso!');
+                    console.log("Employee deleted successfully.");
+                } catch (e) {
+                    console.error("Erro ao remover funcionário: ", e);
+                    showMessage('Erro ao remover funcionário.', 'error');
+                } finally {
+                    confirmDeleteModal.classList.add('hidden');
+                    employeeToDeleteId = null;
+                    loadingIndicator.classList.add('hidden');
+                }
+            }
+        });
+
+        cancelDeleteBtn.addEventListener('click', () => {
+            console.log("Cancel Delete button clicked.");
+            confirmDeleteModal.classList.add('hidden');
+            employeeToDeleteId = null;
+        });
+
+
+        // Date Helpers
+        function getDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+
+        function getMonthName(monthNumber) {
+            const date = new Date(currentYear, monthNumber - 1, 1);
+            return date.toLocaleString('pt-BR', { month: 'long' });
+        }
+
+        function isWeekend(year, month, day) {
+            const date = new Date(year, month - 1, day);
+            const dayOfWeek = date.getDay(); // 0 for Sunday, 6 for Saturday
+            return dayOfWeek === 0 || dayOfWeek === 6;
+        }
+
+        function isHoliday(year, month, day, holidays) {
+            const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            return holidays.includes(dateString);
+        }
+
+        // Render Schedule Table
+        function renderSchedule(employees, scheduleData = {}, holidays = []) {
+            scheduleTable.querySelector('thead tr').innerHTML = `
+                <th class="py-2 px-3 border-r border-gray-200 sticky left-0 bg-blue-100 z-10">Nome</th>
+                <th class="py-2 px-3 border-r border-gray-200 sticky left-[120px] bg-blue-100 z-10">Função</th>
+                <th class="py-2 px-3 border-r border-gray-200 sticky left-[200px] bg-blue-100 z-10">Conselho</th>
+            `;
+            scheduleBody.innerHTML = '';
+
+            const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+
+            // Add day headers
+            for (let i = 1; i <= daysInMonth; i++) {
+                const th = document.createElement('th');
+                th.className = `py-2 px-2 border-r border-gray-200 ${isWeekend(currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i, holidays) ? 'bg-gray-300 text-gray-700' : 'bg-blue-100 text-blue-800'}`;
+                th.textContent = i;
+                scheduleTable.querySelector('thead tr').appendChild(th);
+            }
+
+            // Add employee rows
+            employees.forEach(employee => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+
+                // Employee info cells (sticky)
+                const nameTd = document.createElement('td');
+                nameTd.className = 'py-2 px-3 border-r border-gray-200 font-medium text-gray-900 whitespace-nowrap sticky left-0 bg-white z-10';
+                nameTd.textContent = employee.name;
+                tr.appendChild(nameTd);
+
+                const roleTd = document.createElement('td');
+                roleTd.className = 'py-2 px-3 border-r border-gray-200 text-gray-700 whitespace-nowrap sticky left-[120px] bg-white z-10';
+                roleTd.textContent = employee.role;
+                tr.appendChild(roleTd);
+
+                const councilTd = document.createElement('td');
+                councilTd.className = 'py-2 px-3 border-r border-gray-200 text-gray-700 whitespace-nowrap sticky left-[200px] bg-white z-10';
+                councilTd.textContent = employee.councilRegistration;
+                tr.appendChild(councilTd);
+
+                // Daily assignment cells
+                let currentDay = 1;
+                while (currentDay <= daysInMonth) {
+                    const cellData = scheduleData[employee.id] ? scheduleData[employee.id].find(item => item.day === currentDay) : null;
+                    const isVacation = cellData && cellData.assignment === 'Férias';
+
+                    if (isVacation) {
+                        const vacationStart = new Date(cellData.vacationStart);
+                        const vacationEnd = new Date(cellData.vacationEnd);
+                        const vacationDays = (vacationEnd.getTime() - vacationStart.getTime()) / (1000 * 60 * 60 * 24) + 1;
+
+                        const vacationTd = document.createElement('td');
+                        vacationTd.colSpan = vacationDays;
+                        vacationTd.className = 'py-2 px-2 border border-gray-200 bg-blue-200 text-blue-800 font-semibold vacation';
+                        vacationTd.textContent = 'Férias';
+                        tr.appendChild(vacationTd);
+                        currentDay += vacationDays;
+                    } else {
+                        const td = document.createElement('td');
+                        td.className = `py-2 px-2 border border-gray-200 cursor-pointer hover:bg-blue-100 transition duration-100 ease-in-out text-sm
+                            ${isWeekend(currentYear, currentMonth, currentDay) || isHoliday(currentYear, currentMonth, currentDay, holidays) ? 'bg-gray-200 text-gray-600 weekend' : 'bg-white text-gray-800'}`;
+                        td.textContent = cellData ? cellData.assignment : '';
+                        td.dataset.employeeId = employee.id;
+                        td.dataset.employeeName = employee.name;
+                        td.dataset.day = currentDay;
+                        tr.appendChild(td);
+                        currentDay++;
+                    }
+                }
+                scheduleBody.appendChild(tr);
+            });
+
+            // Add event listeners to schedule cells
+            document.querySelectorAll('#schedule-body td[data-employee-id]').forEach(cell => {
+                cell.addEventListener('click', (event) => {
+                    selectedEmployeeId = event.target.dataset.employeeId;
+                    selectedDay = parseInt(event.target.dataset.day);
+                    selectedEmployeeName = event.target.dataset.employeeName;
+
+                    modalEmployeeName.textContent = selectedEmployeeName;
+                    modalDay.textContent = selectedDay;
+
+                    // Set default dates for the modal
+                    const today = new Date(currentYear, currentMonth - 1, selectedDay);
+                    const formattedDate = today.toISOString().split('T')[0];
+                    startDateInput.value = formattedDate;
+                    endDateInput.value = formattedDate;
+
+                    assignmentModal.classList.remove('hidden');
+                });
+            });
+        }
+
+        // Handle assignment modal save
+        saveAssignmentBtn.addEventListener('click', async () => {
+            console.log("Save Assignment button clicked.");
+            const assignment = assignmentSelect.value;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (!assignment || !startDate || !endDate) {
+                showMessage('Por favor, preencha todos os campos para a atribuição.', 'error');
+                return;
+            }
+
+            if (assignment === 'Férias') {
+                // Open vacation modal instead
+                assignmentModal.classList.add('hidden');
+                vacationModalEmployeeName.textContent = selectedEmployeeName;
+                vacationStartDateInput.value = startDate;
+                vacationEndDateInput.value = endDate;
+                vacationModal.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                loadingIndicator.classList.remove('hidden');
+                const scheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                const docSnap = await getDoc(scheduleDocRef);
+                let scheduleData = {};
+                let holidays = []; // Fetch current holidays to correctly check weekdays
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    scheduleData = data.data || {};
+                    holidays = data.holidays || [];
+                }
+
+                if (!scheduleData[selectedEmployeeId]) {
+                    scheduleData[selectedEmployeeId] = [];
+                }
+
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    // Only apply if the date is within the current month and is a weekday
+                    if (d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear && !isWeekend(d.getFullYear(), d.getMonth() + 1, d.getDate()) && !isHoliday(d.getFullYear(), d.getMonth() + 1, d.getDate(), holidays)) {
+                        const day = d.getDate();
+                        const existingIndex = scheduleData[selectedEmployeeId].findIndex(item => item.day === day);
+                        if (existingIndex !== -1) {
+                            scheduleData[selectedEmployeeId][existingIndex].assignment = assignment;
+                        } else {
+                            scheduleData[selectedEmployeeId].push({ day, assignment });
+                        }
+                    }
+                }
+
+                // Sort assignments by day
+                scheduleData[selectedEmployeeId].sort((a, b) => a.day - b.day);
+
+                await setDoc(scheduleDocRef, { data: scheduleData }, { merge: true });
+                showMessage('Função atribuída com sucesso!');
+                assignmentModal.classList.add('hidden');
+                console.log("Assignment saved successfully.");
+            } catch (e) {
+                console.error("Erro ao salvar atribuição: ", e);
+                showMessage('Erro ao salvar atribuição.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        cancelAssignmentBtn.addEventListener('click', () => {
+            console.log("Cancel Assignment button clicked.");
+            assignmentModal.classList.add('hidden');
+        });
+
+        // Handle vacation modal save
+        saveVacationBtn.addEventListener('click', async () => {
+            console.log("Save Vacation button clicked.");
+            const vacationStart = vacationStartDateInput.value;
+            const vacationEnd = vacationEndDateInput.value;
+
+            if (!vacationStart || !vacationEnd) {
+                showMessage('Por favor, selecione as datas de início e fim das férias.', 'error');
+                return;
+            }
+
+            const start = new Date(vacationStart);
+            const end = new Date(vacationEnd);
+
+            if (start > end) {
+                showMessage('A data de início das férias não pode ser posterior à data de fim.', 'error');
+                return;
+            }
+
+            try {
+                loadingIndicator.classList.remove('hidden');
+                const scheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                const docSnap = await getDoc(scheduleDocRef);
+                let scheduleData = {};
+                if (docSnap.exists()) {
+                    scheduleData = docSnap.data().data || {};
+                }
+
+                if (!scheduleData[selectedEmployeeId]) {
+                    scheduleData[selectedEmployeeId] = [];
+                }
+
+                // Remove existing assignments for vacation period
+                scheduleData[selectedEmployeeId] = scheduleData[selectedEmployeeId].filter(item => {
+                    const itemDate = new Date(currentYear, currentMonth - 1, item.day);
+                    return itemDate < start || itemDate > end;
+                });
+
+                // Add vacation entry
+                scheduleData[selectedEmployeeId].push({
+                    day: start.getDate(), // Store the start day for rendering
+                    assignment: 'Férias',
+                    vacationStart: vacationStart,
+                    vacationEnd: vacationEnd
+                });
+
+                // Sort assignments by day
+                scheduleData[selectedEmployeeId].sort((a, b) => a.day - b.day);
+
+                await setDoc(scheduleDocRef, { data: scheduleData }, { merge: true });
+                showMessage('Férias salvas com sucesso!');
+                vacationModal.classList.add('hidden');
+                console.log("Vacation saved successfully.");
+            } catch (e) {
+                console.error("Erro ao salvar férias: ", e);
+                showMessage('Erro ao salvar férias.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        cancelVacationBtn.addEventListener('click', () => {
+            console.log("Cancel Vacation button clicked.");
+            vacationModal.classList.add('hidden');
+        });
+
+        // Navigation for months
+        prevMonthBtn.addEventListener('click', () => {
+            console.log("Previous month button clicked.");
+            currentMonth--;
+            if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear--;
+            }
+            renderCurrentMonth();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            console.log("Next month button clicked.");
+            currentMonth++;
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            }
+            renderCurrentMonth();
+        });
+
+        // Fetch Public Holidays
+        async function fetchPublicHolidays(year) {
+            console.log(`Fetching public holidays for year: ${year}`);
+            const countryCode = 'BR'; // Brazil
+            const apiUrl = `https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`;
+            try {
+                loadingIndicator.classList.remove('hidden');
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                // Filter for fixed holidays, not necessarily all types (e.g., exclude "observance")
+                const holidays = data.map(h => h.date).filter(Boolean); // Get only the date strings
+                console.log("Public holidays fetched successfully:", holidays);
+                return holidays;
+            } catch (error) {
+                console.error("Erro ao buscar feriados nacionais:", error);
+                showMessage("Erro ao buscar feriados nacionais. Verifique sua conexão ou tente adicionar manualmente.", "error");
+                return [];
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        fetchHolidaysBtn.addEventListener('click', async () => {
+            console.log("Fetch Holidays button clicked.");
+            if (!userId) {
+                showMessage('Erro: Usuário não autenticado. Por favor, aguarde o carregamento ou recarregue a página.', 'error');
+                return;
+            }
+            const fetchedHolidays = await fetchPublicHolidays(currentYear);
+            if (fetchedHolidays.length > 0) {
+                // Get existing holidays for the current month
+                const scheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                const docSnap = await getDoc(scheduleDocRef);
+                let existingHolidays = [];
+                if (docSnap.exists() && docSnap.data().holidays) {
+                    existingHolidays = docSnap.data().holidays;
+                }
+
+                // Merge fetched holidays with existing ones, avoiding duplicates
+                const mergedHolidays = [...new Set([...existingHolidays, ...fetchedHolidays])].sort();
+
+                holidaysInput.value = mergedHolidays.join(', ');
+                // Also save to Firestore immediately
+                try {
+                    loadingIndicator.classList.remove('hidden');
+                    await setDoc(scheduleDocRef, { holidays: mergedHolidays }, { merge: true });
+                    showMessage('Feriados nacionais buscados e salvos com sucesso!');
+                    console.log("Holidays saved to Firestore.");
+                } catch (e) {
+                    console.error("Erro ao salvar feriados buscados: ", e);
+                    showMessage('Erro ao salvar feriados buscados.', 'error');
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                }
+            } else {
+                showMessage('Nenhum feriado encontrado para o ano atual ou erro na busca.', 'error');
+            }
+        });
+
+        // Copy Schedule to Next Month
+        copyScheduleBtn.addEventListener('click', async () => {
+            console.log("Copy Schedule button clicked.");
+            if (!userId) {
+                showMessage('Erro: Usuário não autenticado. Por favor, aguarde o carregamento ou recarregue a página.', 'error');
+                return;
+            }
+
+            try {
+                loadingIndicator.classList.remove('hidden');
+                const currentMonthDocId = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+                const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+                const nextYear = currentMonth === 12 ? currentYear + 1 : currentYear;
+                const nextMonthDocId = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+
+                const currentScheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${currentMonthDocId}`);
+                const currentDocSnap = await getDoc(currentScheduleDocRef);
+
+                if (!currentDocSnap.exists()) {
+                    showMessage('Nenhuma escala encontrada para o mês atual para copiar.', 'error');
+                    loadingIndicator.classList.add('hidden');
+                    return;
+                }
+
+                const currentScheduleData = currentDocSnap.data();
+                const copiedData = currentScheduleData.data || {};
+                const copiedHolidays = []; // Don't copy specific holidays, they should be fetched for the new month
+                const copiedObservations = `Copiado de ${getMonthName(currentMonth)}/${currentYear}.`; // Initial observation
+
+                const nextScheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${nextMonthDocId}`);
+                await setDoc(nextScheduleDocRef, {
+                    data: copiedData,
+                    holidays: copiedHolidays, // Holidays should be re-fetched or manually added for the new month
+                    observations: copiedObservations
+                }, { merge: true });
+
+                showMessage(`Escala copiada para ${getMonthName(nextMonth)} de ${nextYear} com sucesso!`);
+                console.log("Schedule copied successfully.");
+            } catch (e) {
+                console.error("Erro ao copiar escala: ", e);
+                showMessage(`Erro ao copiar escala: ${e.message}`, 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        // Save Holidays
+        saveHolidaysBtn.addEventListener('click', async () => {
+            console.log("Save Holidays button clicked.");
+            if (!userId) {
+                showMessage('Erro: Usuário não autenticado. Por favor, aguarde o carregamento ou recarregue a página.', 'error');
+                return;
+            }
+            const holidaysArray = holidaysInput.value.split(',').map(s => s.trim()).filter(Boolean);
+            try {
+                loadingIndicator.classList.remove('hidden');
+                const scheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                await setDoc(scheduleDocRef, { holidays: holidaysArray }, { merge: true });
+                showMessage('Feriados salvos com sucesso!');
+                console.log("Holidays saved manually.");
+            } catch (e) {
+                console.error("Erro ao salvar feriados: ", e);
+                showMessage('Erro ao salvar feriados.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        // Save Observations
+        saveObservationsBtn.addEventListener('click', async () => {
+            console.log("Save Observations button clicked.");
+            if (!userId) {
+                showMessage('Erro: Usuário não autenticado. Por favor, aguarde o carregamento ou recarregue a página.', 'error');
+                return;
+            }
+            const observationsText = monthlyObservationsTextarea.value.trim();
+            try {
+                loadingIndicator.classList.remove('hidden');
+                const scheduleDocRef = doc(db, `artifacts/${appId}/users/${userId}/schedules/${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                await setDoc(scheduleDocRef, { observations: observationsText }, { merge: true });
+                showMessage('Observações salvas com sucesso!');
+                console.log("Observations saved.");
+            } catch (e) {
+                console.error("Erro ao salvar observações: ", e);
+                showMessage('Erro ao salvar observações.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        // View in New Window functionality
+        viewInNewWindowBtn.addEventListener('click', () => {
+            console.log("View in New Window button clicked.");
+            const newWindow = window.open('', '_blank');
+            if (!newWindow) {
+                showMessage('Por favor, permita pop-ups para visualizar a escala em uma nova janela.', 'error');
+                return;
+            }
+
+            // Get the HTML content of the schedule table and observations
+            const scheduleTableContent = scheduleTable.outerHTML;
+            const observationsContent = monthlyObservationsTextarea.value.trim();
+            const currentMonthYear = currentMonthYearSpan.textContent;
+
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Escala do Centro de Saúde - ${currentMonthYear}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Inter', sans-serif; margin: 20px; background-color: #f8f8f8; }
+                        h1 { text-align: center; color: #1e40af; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+                        th { background-color: #e0e7ff; color: #1e40af; }
+                        .weekend, .holiday { background-color: #e0e0e0; color: #666; }
+                        .vacation { background-color: #b3e0ff; color: #1e40af; font-weight: bold; }
+                        .observations-section {
+                            margin-top: 30px;
+                            padding: 15px;
+                            border: 1px solid #ddd;
+                            border-radius: 8px;
+                            background-color: #fff;
+                        }
+                        .observations-section h3 {
+                            color: #6b21a8;
+                            margin-bottom: 10px;
+                        }
+                        .legend {
+                            margin-top: 30px;
+                            padding: 15px;
+                            border: 1px solid #ddd;
+                            border-radius: 8px;
+                            background-color: #fff;
+                        }
+                        .legend h3 {
+                            color: #1e40af;
+                            margin-bottom: 10px;
+                        }
+                        .legend div {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                            gap: 5px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Escala do Centro de Saúde - ${currentMonthYear}</h1>
+                    ${scheduleTableContent}
+                    ${observationsContent ? `<div class="observations-section"><h3>Observações do Mês:</h3><p>${observationsContent}</p></div>` : ''}
+                    <div class="legend">
+                        <h3>Legenda:</h3>
+                        <div>
+                            <span>F: Farmácia</span>
+                            <span>SOE: Sala de Observação</span>
+                            <span>P: Presente</span>
+                            <span>C: Curativo</span>
+                            <span>BR: Acolhimento Baixo Risco</span>
+                            <span>LM: Licença Médica</span>
+                            <span>FO: Folga</span>
+                            <span>E: ECG</span>
+                            <span>V: Vacina</span>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            newWindow.document.close();
+        });
+
+
+        // Print functionality
+        printScheduleBtn.addEventListener('click', () => {
+            console.log("Print Schedule button clicked.");
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showMessage('Por favor, permita pop-ups para imprimir a escala.', 'error');
+                return;
+            }
+
+            // Get the HTML content of the print area
+            const printAreaContent = document.querySelector('.print-area').outerHTML;
+            const legendContent = document.querySelector('.legend').outerHTML;
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Escala do Centro de Saúde - Impressão</title>
+                    <style>
+                        body {
+                            font-family: 'Inter', sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            -webkit-print-color-adjust: exact; /* For background colors in print */
+                            print-color-adjust: exact;
+                        }
+                        .print-area {
+                            width: 100%;
+                            margin: 0;
+                            padding: 0;
+                            box-shadow: none;
+                            border: none;
+                            overflow: visible; /* Ensure content is not clipped */
+                        }
+                        .print-area table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            font-size: 8pt;
+                            table-layout: fixed; /* Ensures columns are equally sized */
+                        }
+                        .print-area th, .print-area td {
+                            border: 1px solid #ccc;
+                            padding: 2px 4px;
+                            text-align: center;
+                            white-space: nowrap; /* Prevent text wrapping in cells */
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+                        .print-area th:nth-child(1),
+                        .print-area td:nth-child(1) { width: 15%; } /* Name */
+                        .print-area th:nth-child(2),
+                        .print-area td:nth-child(2) { width: 10%; } /* Role */
+                        .print-area th:nth-child(3),
+                        .print-area td:nth-child(3) { width: 15%; } /* Council */
+                        /* Dynamic width for days based on remaining space */
+                        .print-area th:nth-child(n+4),
+                        .print-area td:nth-child(n+4) { width: calc((60% - 3px) / ${getDaysInMonth(currentYear, currentMonth)}); } /* Remaining width divided by days */
+
+                        .print-area .weekend, .print-area .holiday {
+                            background-color: #e0e0e0 !important;
+                        }
+                        .print-area .vacation {
+                            background-color: #b3e0ff !important;
+                        }
+                        .legend {
+                            position: absolute; /* Use absolute for print to control placement */
+                            bottom: 10mm;
+                            left: 10mm;
+                            right: 10mm;
+                            width: auto;
+                            font-size: 7pt;
+                            text-align: left;
+                            border-top: 1px solid #ccc;
+                            padding-top: 5mm;
+                        }
+                        /* Force landscape orientation for A4 */
+                        @page {
+                            size: A4 landscape;
+                            margin: 10mm;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printAreaContent}
+                    ${legendContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.onafterprint = function() {
+                                window.close();
+                            };
+                        };
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        });
+
+
+        // Initialize the app when the window loads
+        window.onload = initializeFirebase;
+    </script>
+</body>
+</html>
