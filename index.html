@@ -238,7 +238,7 @@
     <!-- Registration Modal -->
     <div id="registrationModal" class="modal hidden">
         <div class="modal-content">
-            <button class="close-button" onclick="window.closeRegistrationModal()">&times;</button>
+            <button id="closeRegistrationModalBtn" class="close-button">&times;</button>
             <h3 class="text-2xl font-bold mb-4 text-blue-700">Cadastro Completo</h3>
             <div class="space-y-4">
                 <input type="text" id="regFullName" placeholder="Nome Completo" class="input-field">
@@ -392,7 +392,7 @@
     <!-- Manage Siglas Modal -->
     <div id="manageSiglasModal" class="modal hidden">
         <div class="modal-content">
-            <button class="close-button" onclick="window.closeManageSiglasModal()">&times;</button>
+            <button id="closeManageSiglasModalBtn" class="close-button">&times;</button>
             <h3 class="text-2xl font-bold mb-4 text-blue-700">Gerenciar Siglas</h3>
 
             <div class="mb-6 bg-gray-50 p-4 rounded-lg shadow-sm">
@@ -427,6 +427,8 @@
     </div>
 
     <script type="module">
+        console.log("Script started parsing."); // This is the very first executable line in the module.
+
         // Global variables for Firebase configuration and app ID
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         // Using the firebaseConfig provided directly by the user
@@ -479,10 +481,25 @@
 
         // --- Utility Functions ---
 
+        /**
+         * Escapes HTML entities in a string to prevent XSS and syntax issues.
+         * @param {string} unsafe - The string to escape.
+         * @returns {string} The escaped string.
+         */
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/`/g, "&#96;"); // Escape backticks too, crucial for template literals
+        }
+
         // Make functions globally accessible for inline HTML event handlers
         window.showMessageBox = function(message, duration = 3000) {
             const messageBox = document.getElementById('messageBox');
-            document.getElementById('messageText').textContent = message;
+            document.getElementById('messageText').textContent = message; // textContent handles escaping
             messageBox.classList.remove('hidden');
             setTimeout(() => {
                 window.hideMessageBox();
@@ -519,7 +536,7 @@
 
             if (user) {
                 userId = user.uid;
-                userStatus.textContent = `Logado como: ${user.email} (ID: ${userId})`;
+                userStatus.textContent = `Logado como: ${escapeHtml(user.email)} (ID: ${escapeHtml(userId)})`;
                 appContent.classList.remove('hidden');
                 authSection.classList.add('hidden');
 
@@ -650,12 +667,13 @@
 
 
         async function loginUser() {
-            console.log("Attempting login...");
+            console.log("loginUser function called.");
             if (!auth) {
-                console.error("Firebase Auth is not initialized.");
+                console.error("Firebase Auth is not initialized. Cannot complete login.");
                 document.getElementById('authMessage').textContent = 'Erro: Serviço de autenticação não disponível. Tente novamente mais tarde.';
                 return;
             }
+            console.log("Firebase Auth is initialized:", auth);
 
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
@@ -668,13 +686,15 @@
             }
 
             try {
-                console.log(`Signing in with email: ${email}`);
-                await signInWithEmailAndPassword(auth, email, password);
-                console.log("Login successful.");
+                console.log(`Attempting to sign in with email: ${email}`);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log("Login successful. User:", userCredential.user);
                 authMessage.textContent = ''; // Clear message on success
             } catch (error) {
                 console.error("Erro no login:", error);
                 authMessage.textContent = `Erro no login: ${error.message}`;
+                // Also log the full error object for more details
+                console.error("Full Firebase login error object:", error);
             }
         }
 
@@ -830,7 +850,7 @@
                     customSiglas = [ // Fallback to hardcoded defaults on error
                         { value: 'F', description: 'Farmácia' },
                         { value: 'S', description: 'Sala de Observação' },
-                        { value: 'P', description: 'Presente' },
+                        { value: 'P', description: 'P`resente' },
                         { value: 'CT', description: 'Curativo' },
                         { value: 'BR', description: 'Acolhimento Baixo Risco' },
                         { value: 'E', description: 'ECG' },
@@ -883,14 +903,14 @@
             generalSiglas.forEach(sigla => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center';
-                label.innerHTML = `<input type="checkbox" name="siglaMonth" value="${sigla.value}" class="mr-2"> ${sigla.value} (${sigla.description})`;
+                label.innerHTML = `<input type="checkbox" name="siglaMonth" value="${escapeHtml(sigla.value)}" class="mr-2"> ${escapeHtml(sigla.value)} (${escapeHtml(sigla.description)})`;
                 siglaCheckboxesMonthDiv.appendChild(label);
             });
 
             dailySiglas.forEach(sigla => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center';
-                label.innerHTML = `<input type="checkbox" name="siglaDay" value="${sigla.value}" class="mr-2"> ${sigla.value} (${sigla.description})`;
+                label.innerHTML = `<input type="checkbox" name="siglaDay" value="${escapeHtml(sigla.value)}" class="mr-2"> ${escapeHtml(sigla.value)} (${escapeHtml(sigla.description)})`;
                 siglaCheckboxesDayDiv.appendChild(label);
             });
         }
@@ -924,11 +944,10 @@
             customSiglas.forEach(sigla => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
-                // Escape single quotes in sigla.value for the onclick attribute
-                const escapedSiglaValue = sigla.value.replace(/'/g, "\\'");
+                // Using data-attribute for safer passing of values
                 li.innerHTML = `
-                    <span><strong>${sigla.value}</strong>: ${sigla.description}</span>
-                    <button onclick="window.deleteCustomSigla('${escapedSiglaValue}')" class="btn-danger ml-2">Excluir</button>
+                    <span><strong>${escapeHtml(sigla.value)}</strong>: ${escapeHtml(sigla.description)}</span>
+                    <button data-sigla-value="${escapeHtml(sigla.value)}" class="btn-danger ml-2 delete-sigla-btn">Excluir</button>
                 `;
                 customSiglasListUl.appendChild(li);
             });
@@ -959,7 +978,7 @@
         }
 
         window.deleteCustomSigla = function(valueToDelete) {
-            if (window.confirm(`Tem certeza que deseja excluir a sigla "${valueToDelete}"? Isso pode afetar escalas existentes.`)) {
+            if (window.confirm(`Tem certeza que deseja excluir a sigla "${escapeHtml(valueToDelete)}"? Isso pode afetar escalas existentes.`)) {
                 customSiglas = customSiglas.filter(s => s.value !== valueToDelete);
                 saveCustomSiglas();
                 renderCustomSiglasList();
@@ -1070,13 +1089,13 @@
                 li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
                 li.innerHTML = `
                     <div class="flex-grow">
-                        <span class="font-medium text-blue-600 cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
-                        <span class="text-sm text-gray-500 ml-2">(${emp.role} - ${emp.council} - ${emp.workShift})</span>
-                        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${teamColorClass} ml-2">${emp.team}</span>
-                        <span class="text-xs text-gray-400 block break-all">ID: ${emp.id}</span>
+                        <span class="font-medium text-blue-600 cursor-pointer employee-name-link" data-employee-id="${escapeHtml(emp.id)}">${escapeHtml(emp.name)}</span>
+                        <span class="text-sm text-gray-500 ml-2">(${escapeHtml(emp.role)} - ${escapeHtml(emp.council)} - ${escapeHtml(emp.workShift)})</span>
+                        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${teamColorClass} ml-2">${escapeHtml(emp.team)}</span>
+                        <span class="text-xs text-gray-400 block break-all">ID: ${escapeHtml(emp.id)}</span>
                     </div>
                     <div>
-                        <button onclick="window.deleteEmployee('${emp.id}')" class="btn-danger ml-2 admin-only">Excluir</button>
+                        <button data-employee-id="${escapeHtml(emp.id)}" class="btn-danger ml-2 admin-only delete-employee-btn">Excluir</button>
                     </div>
                 `;
                 employeesUl.appendChild(li);
@@ -1118,22 +1137,22 @@
                 const tr = document.createElement('tr');
                 const teamColorClass = getTeamColorClass(emp.team);
                 tr.innerHTML = `
-                    <td class="font-medium text-blue-600 cursor-pointer ${teamColorClass}" onclick="window.openSiglaVacationModal('${emp.id}')">
-                        ${emp.name} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${emp.team}</span>
+                    <td class="font-medium text-blue-600 cursor-pointer ${teamColorClass} employee-name-link" data-employee-id="${escapeHtml(emp.id)}">
+                        ${escapeHtml(emp.name)} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${escapeHtml(emp.team)}</span>
                     </td>
-                    <td>${emp.role}</td>
-                    <td>${emp.council}</td>
-                    <td>${emp.workShift || ''}</td> <!-- Display work shift -->
+                    <td>${escapeHtml(emp.role)}</td>
+                    <td>${escapeHtml(emp.council)}</td>
+                    <td>${escapeHtml(emp.workShift || '')}</td> <!-- Display work shift -->
                 `;
                 for (let i = 1; i <= daysInMonth; i++) {
                     const td = document.createElement('td');
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                    td.setAttribute('data-employee-id', emp.id); // Add data attribute for employee ID
-                    td.setAttribute('data-date-key', dateKey); // Add data attribute for date key
+                    td.setAttribute('data-employee-id', escapeHtml(emp.id)); // Add data attribute for employee ID
+                    td.setAttribute('data-date-key', escapeHtml(dateKey)); // Add data attribute for date key
                     
                     // Only allow click on day cells if user is admin
                     if (currentUserRole === 'admin') {
-                        td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
+                        td.addEventListener('click', function() { window.openSiglaVacationModal(emp.id, dateKey); }); // Use addEventListener
                     } else {
                         td.style.cursor = 'default'; // Change cursor for non-admin
                     }
@@ -1163,7 +1182,7 @@
                     } else {
                         // Display multiple siglas joined by comma
                         const siglas = emp.schedule && emp.schedule[dateKey] ? emp.schedule[dateKey] : [];
-                        td.textContent = Array.isArray(siglas) ? siglas.join(', ') : siglas; // Handle old string format if any
+                        cellContent = Array.isArray(siglas) ? escapeHtml(siglas.join(', ')) : escapeHtml(siglas); // Handle old string format if any
                         if (isWeekend(currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i)) {
                             td.classList.add('weekend');
                         }
@@ -1249,7 +1268,7 @@
             currentEditingDateKey = dateKey; // Store the dateKey
             const employee = employees.find(emp => emp.id === employeeId);
             if (employee) {
-                document.getElementById('modalEmployeeName').textContent = `Editar Escala de: ${employee.name}`;
+                document.getElementById('modalEmployeeName').textContent = `Editar Escala de: ${escapeHtml(employee.name)}`;
                 document.getElementById('siglaVacationModal').classList.remove('hidden');
                 // Reset form fields
                 document.getElementById('vacationStart').value = '';
@@ -1283,7 +1302,7 @@
                     // Editing a specific day
                     siglaSectionMonth.classList.add('hidden');
                     siglaSectionDay.classList.remove('hidden');
-                    modalDayNumber.textContent = currentEditingDateKey.split('-')[2]; // Extract day number
+                    modalDayNumber.textContent = escapeHtml(currentEditingDateKey.split('-')[2]); // Extract day number
                     console.log("Editing specific day:", currentEditingDateKey);
 
                     // Pre-check siglas for the specific day
@@ -1293,14 +1312,14 @@
                     const siglasForDay = employee.schedule && employee.schedule[currentEditingDateKey] ? employee.schedule[currentEditingDateKey] : [];
                     if (Array.isArray(siglasForDay)) {
                         siglasForDay.forEach(sigla => {
-                            const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${sigla}"]`);
+                            const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${escapeHtml(sigla)}"]`);
                             if (checkbox) {
                                 checkbox.checked = true;
                             }
                         });
                     } else if (typeof siglasForDay === 'string' && siglasForDay !== '') {
                         // Handle old string format: treat as a single sigla
-                        const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${siglasForDay}"]`);
+                        const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${escapeHtml(siglasForDay)}"]`);
                         if (checkbox) {
                             checkbox.checked = true;
                         }
@@ -1332,7 +1351,7 @@
                     }
 
                     currentMonthSiglas.forEach(sigla => {
-                        const checkbox = document.querySelector(`#siglaCheckboxesMonth input[value="${sigla}"]`);
+                        const checkbox = document.querySelector(`#siglaCheckboxesMonth input[value="${escapeHtml(sigla)}"]`);
                         if (checkbox) {
                             checkbox.checked = true;
                         }
@@ -1444,7 +1463,7 @@
 
             saveEmployees();
             renderSchedule();
-            window.showMessageBox(`Sigla(s) aplicada(s) para o dia ${currentEditingDateKey.split('-')[2]}.`);
+            window.showMessageBox(`Sigla(s) aplicada(s) para o dia ${escapeHtml(currentEditingDateKey.split('-')[2])}.`);
             window.closeSiglaVacationModal();
             console.log("Daily siglas applied.");
         }
@@ -1459,7 +1478,7 @@
                 window.showMessageBox('Erro: Dia não selecionado para limpar sigla.', 3000);
                 return;
             }
-            if (window.confirm(`Tem certeza que deseja limpar as siglas para o dia ${currentEditingDateKey.split('-')[2]}?`)) {
+            if (window.confirm(`Tem certeza que deseja limpar as siglas para o dia ${escapeHtml(currentEditingDateKey.split('-')[2])}?`)) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
 
@@ -1469,7 +1488,7 @@
                 }
                 saveEmployees();
                 renderSchedule();
-                window.showMessageBox(`Siglas para o dia ${currentEditingDateKey.split('-')[2]} limpas.`);
+                window.showMessageBox(`Siglas para o dia ${escapeHtml(currentEditingDateKey.split('-')[2])} limpas.`);
                 window.closeSiglaVacationModal();
                 console.log("Daily siglas cleared.");
             }
@@ -1592,7 +1611,7 @@
 
                     // Get siglas from current month, filtering out FO/LM for general copy
                     const sourceSiglas = emp.schedule[currentDateKey] || [];
-                    const generalSiglasToCopy = Array.isArray(sourceSiglas) ? sourceSiglas.filter(s => s !== 'FO' && s !== 'LM') : [];
+                    const generalSiglasToCopy = Array.isArray(sourceSiglas) ? sourceSiglas.filter(s => s !== 'FO' || s !== 'LM') : [];
 
                     // Preserve existing FO/LM in the target day
                     const existingFoLm = emp.schedule[nextDateKey] || [];
@@ -1645,7 +1664,7 @@
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Imprimir Escala - ${document.getElementById('currentMonthYear').textContent}</title>
+                    <title>Imprimir Escala - ${escapeHtml(document.getElementById('currentMonthYear').textContent)}</title>
                     <style>
                         body { font-family: 'Inter', sans-serif; margin: 20px; }
                         .printable-header { text-align: center; margin-bottom: 20px; font-size: 16px; }
@@ -1694,7 +1713,7 @@
                 <body>
                     <div class="printable-content">
                         <div class="printable-header">
-                            <h2>Escala do Centro de Saúde - ${document.getElementById('currentMonthYear').textContent}</h2>
+                            <h2>Escala do Centro de Saúde - ${escapeHtml(document.getElementById('currentMonthYear').textContent)}</h2>
                         </div>
                         <div class="printable-table-container">
                             <table class="printable-table">
@@ -1718,11 +1737,11 @@
                                     ${sortEmployeesByRole(employees).map(emp => {
                                         let rowHtml = `<tr>
                                             <td class="font-medium ${getTeamColorClass(emp.team)}-print">
-                                                ${emp.name} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${emp.team}</span>
+                                                ${escapeHtml(emp.name)} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${escapeHtml(emp.team)}</span>
                                             </td>
-                                            <td>${emp.role}</td>
-                                            <td>${emp.council}</td>
-                                            <td>${emp.workShift || ''}</td>`;
+                                            <td>${escapeHtml(emp.role)}</td>
+                                            <td>${escapeHtml(emp.council)}</td>
+                                            <td>${escapeHtml(emp.workShift || '')}</td>`;
                                         for (let i = 1; i <= getDaysInMonth(currentYear, currentMonth); i++) {
                                             const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                                             const isDayWeekend = isWeekend(currentYear, currentMonth, i);
@@ -1742,7 +1761,7 @@
                                                         span++;
                                                         j++;
                                                     }
-                                                    rowHtml += `<td colspan="${span}" class="${cellClasses}">${cellContent}</td>`;
+                                                    rowHtml += `<td colspan="${span}" class="${cellClasses}">${escapeHtml(cellContent)}</td>`;
                                                     i += (span - 1); // Skip merged days
                                                 }
                                             } else {
@@ -1752,7 +1771,7 @@
                                                 if (isDayWeekend || isDayHoliday) {
                                                     cellClasses = 'weekend';
                                                 }
-                                                rowHtml += `<td class="${cellClasses}">${cellContent}</td>`;
+                                                rowHtml += `<td class="${cellClasses}">${escapeHtml(cellContent)}</td>`;
                                             }
                                         }
                                         rowHtml += `</tr>`;
@@ -1764,9 +1783,9 @@
                         <div class="printable-legend">
                             <h3>Legenda:</h3>
                             <ul>
-                                ${customSiglas.map(sigla => `<li><strong>${sigla.value}:</strong> ${sigla.description}</li>`).join('')}
+                                ${customSiglas.map(sigla => `<li><strong>${escapeHtml(sigla.value)}:</strong> ${escapeHtml(sigla.description)}</li>`).join('')}
                             </ul>
-                            <p><strong>Observações:</strong> ${monthlyObservations[`${currentYear}-${currentMonth + 1}`] || 'Nenhuma observação para este mês.'}</p>
+                            <p><strong>Observações:</strong> ${escapeHtml(monthlyObservations[`${currentYear}-${currentMonth + 1}`] || 'Nenhuma observação para este mês.')}</p>
                         </div>
                     </div>
                 </body>
@@ -1780,49 +1799,48 @@
 
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log("DOMContentLoaded fired.");
-            console.log("Firebase Config (from hardcoded):", firebaseConfig); // Log the hardcoded config
+            console.log("--- DOMContentLoaded fired. Starting app initialization. ---");
+
+            console.log("Firebase Config (from hardcoded):", firebaseConfig);
             console.log("Initial Auth Token (from environment):", initialAuthToken);
 
             // Initialize Firebase
-            if (firebaseConfig && firebaseConfig.apiKey) { // Ensure firebaseConfig is not null and has an API key
+            if (firebaseConfig && firebaseConfig.apiKey) {
                 try {
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
                     console.log("Firebase app, db, auth initialized successfully.");
+                    console.log("Auth object after initialization:", auth);
 
-                    // Listen for authentication state changes (this will also handle the initial state established above)
+                    // Listen for authentication state changes
                     onAuthStateChanged(auth, handleAuthStateChanged);
                     console.log("onAuthStateChanged listener attached.");
 
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase ou autenticar:", error);
                     window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Funcionalidades de autenticação e persistência não estarão disponíveis.`, 7000);
-                    // Set auth and db to null explicitly to prevent further errors
                     db = null;
                     auth = null;
-                    userId = crypto.randomUUID(); // Dummy userId for localStorage context
+                    userId = crypto.randomUUID();
                     currentUserRole = 'guest';
                     isAuthReady = true;
-                    // Still attempt to load/render from localStorage for basic functionality
                     loadEmployees();
                     loadMonthlyObservations();
-                    loadCustomSiglas(); // Load custom siglas even if Firebase init fails for auth, might work for data
-                    updateAdminUI(); // Ensure UI is updated for guest mode
+                    loadCustomSiglas();
+                    updateAdminUI();
                 }
             } else {
                 console.warn("Firebase config is missing or incomplete. Falling back to localStorage for data, authentication features disabled.");
-                // If no Firebase config, proceed with localStorage only
-                db = null; // Ensure db is null
-                auth = null; // Ensure auth is null
-                userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
+                db = null;
+                auth = null;
+                userId = crypto.randomUUID();
                 currentUserRole = 'guest';
                 isAuthReady = true;
                 loadEmployees();
                 loadMonthlyObservations();
-                loadCustomSiglas(); // Load custom siglas from local storage
-                updateAdminUI(); // Ensure UI is updated for guest mode
+                loadCustomSiglas();
+                updateAdminUI();
                 window.showMessageBox('Configuração do Firebase não encontrada. Funcionalidades de autenticação e persistência estão desativadas.', 7000);
             }
 
@@ -1831,32 +1849,68 @@
             const registerBtn = document.getElementById('registerBtn');
             const completeRegisterBtn = document.getElementById('completeRegisterBtn');
             const logoutBtn = document.getElementById('logoutBtn');
+            const closeRegistrationModalBtn = document.getElementById('closeRegistrationModalBtn'); // Get new close button
+            const closeManageSiglasModalBtn = document.getElementById('closeManageSiglasModalBtn'); // Get new close button
 
-            // Only attach listeners if Firebase auth is potentially available, or if we want to show a message
+
             if (loginBtn) {
-                loginBtn.addEventListener('click', loginUser);
-                console.log("loginBtn listener attached.");
+                console.log("Login button element found:", loginBtn);
+                loginBtn.addEventListener('click', () => {
+                    console.log("Login button clicked. Calling loginUser().");
+                    loginUser();
+                });
             } else {
-                console.error("loginBtn not found!");
+                console.error("Login button (loginBtn) not found!");
             }
             if (registerBtn) {
-                registerBtn.addEventListener('click', window.openRegistrationModal);
-                console.log("registerBtn listener attached.");
+                console.log("Register button element found:", registerBtn);
+                registerBtn.addEventListener('click', () => {
+                    console.log("Register button clicked. Calling window.openRegistrationModal().");
+                    window.openRegistrationModal();
+                });
             } else {
-                console.error("registerBtn not found!");
+                console.error("Register button (registerBtn) not found!");
             }
             if (completeRegisterBtn) {
-                completeRegisterBtn.addEventListener('click', completeRegistration);
-                console.log("completeRegisterBtn listener attached.");
+                console.log("Complete Register button element found:", completeRegisterBtn);
+                completeRegisterBtn.addEventListener('click', () => {
+                    console.log("Complete Register button clicked. Calling completeRegistration().");
+                    completeRegistration();
+                });
             } else {
-                console.error("completeRegisterBtn not found!");
+                console.error("Complete Register button (completeRegisterBtn) not found!");
             }
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', logoutUser);
-                console.log("logoutBtn listener attached.");
+                console.log("Logout button element found:", logoutBtn);
+                logoutBtn.addEventListener('click', () => {
+                    console.log("Logout button clicked. Calling logoutUser().");
+                    logoutUser();
+                });
             } else {
-                console.error("logoutBtn not found!");
+                console.error("Logout button (logoutBtn) not found!");
             }
+
+            // New event listeners for modal close buttons
+            if (closeRegistrationModalBtn) {
+                console.log("Close Registration Modal button found:", closeRegistrationModalBtn);
+                closeRegistrationModalBtn.addEventListener('click', () => {
+                    console.log("Close Registration Modal button clicked. Calling window.closeRegistrationModal().");
+                    window.closeRegistrationModal();
+                });
+            } else {
+                console.error("Close Registration Modal button not found!");
+            }
+
+            if (closeManageSiglasModalBtn) {
+                console.log("Close Manage Siglas Modal button found:", closeManageSiglasModalBtn);
+                closeManageSiglasModalBtn.addEventListener('click', () => {
+                    console.log("Close Manage Siglas Modal button clicked. Calling window.closeManageSiglasModal().");
+                    window.closeManageSiglasModal();
+                });
+            } else {
+                console.error("Close Manage Siglas Modal button not found!");
+            }
+
 
             // Event listener for custom role field
             document.getElementById('employeeRole').addEventListener('change', function() {
@@ -1873,6 +1927,28 @@
             document.getElementById('addEmployeeBtn').addEventListener('click', addEmployee);
             document.getElementById('manageSiglasBtn').addEventListener('click', window.openManageSiglasModal); // New button listener
             document.getElementById('addSiglaBtn').addEventListener('click', addCustomSigla); // New button listener
+
+            // New delegated event listener for deleting siglas
+            document.getElementById('customSiglasList').addEventListener('click', (event) => {
+                if (event.target.classList.contains('delete-sigla-btn')) {
+                    const siglaValue = event.target.dataset.siglaValue;
+                    window.deleteCustomSigla(siglaValue);
+                }
+            });
+
+            // Delegated event listener for opening Sigla/Vacation modal from employee name
+            document.getElementById('employeesUl').addEventListener('click', (event) => {
+                const target = event.target;
+                if (target.classList.contains('employee-name-link')) {
+                    const employeeId = target.dataset.employeeId;
+                    window.openSiglaVacationModal(employeeId);
+                }
+                if (target.classList.contains('delete-employee-btn')) {
+                    const employeeId = target.dataset.employeeId;
+                    window.deleteEmployee(employeeId);
+                }
+            });
+
 
             document.getElementById('prevMonth').addEventListener('click', () => {
                 currentMonth--;
