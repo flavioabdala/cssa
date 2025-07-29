@@ -399,12 +399,20 @@
     <div id="messageBox" class="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg hidden z-2000">
         <p id="messageText"></p>
         <button class="ml-4 text-white font-bold" onclick="window.hideMessageBox()">&times;</button>
-    </div>
-
+    </div
     <script type="module">
         // Global variables for Firebase configuration and app ID
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        // Using the firebaseConfig provided directly by the user
+        const firebaseConfig = {
+            apiKey: "AIzaSyALs6IeL242UJH7uXpa-0mQq_CN_RA-xWA",
+            authDomain: "escalasaudeapp.firebaseapp.com",
+            projectId: "escalasaudeapp",
+            storageBucket: "escalasaudeapp.firebasestorage.app",
+            messagingSenderId: "1040621794903",
+            appId: "1:1040621794903:web:61518f984286e11fb29512",
+            measurementId: "G-YHH987DD5J"
+        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let db = null; // Initialize as null
@@ -489,23 +497,28 @@
                 authSection.classList.add('hidden');
 
                 // Fetch user role from Firestore
-                const userDocRef = doc(db, 'users', userId);
-                try {
-                    const userDocSnap = await getDoc(userDocRef);
-                    if (userDocSnap.exists()) {
-                        currentUserRole = userDocSnap.data().role || 'user'; // Default to 'user' if role not set
-                        console.log("User role fetched from Firestore:", currentUserRole);
-                    } else {
-                        // If user document doesn't exist, create it with 'user' role
-                        // This happens on first login after registration
-                        console.log("User document not found, creating with default 'user' role.");
-                        await setDoc(userDocRef, { email: user.email, role: 'user', uid: userId });
-                        currentUserRole = 'user';
+                if (db) { // Ensure db is initialized before trying to access Firestore
+                    const userDocRef = doc(db, 'users', userId);
+                    try {
+                        const userDocSnap = await getDoc(userDocRef);
+                        if (userDocSnap.exists()) {
+                            currentUserRole = userDocSnap.data().role || 'user'; // Default to 'user' if role not set
+                            console.log("User role fetched from Firestore:", currentUserRole);
+                        } else {
+                            // If user document doesn't exist, create it with 'user' role
+                            // This happens on first login after registration
+                            console.log("User document not found, creating with default 'user' role.");
+                            await setDoc(userDocRef, { email: user.email, role: 'user', uid: userId });
+                            currentUserRole = 'user';
+                        }
+                    } catch (error) {
+                        console.error("Erro ao carregar/criar documento do usuário:", error);
+                        currentUserRole = 'user'; // Fallback
+                        window.showMessageBox("Erro ao carregar perfil do usuário. Tente novamente.", 5000);
                     }
-                } catch (error) {
-                    console.error("Erro ao carregar/criar documento do usuário:", error);
-                    currentUserRole = 'user'; // Fallback
-                    window.showMessageBox("Erro ao carregar perfil do usuário. Tente novamente.", 5000);
+                } else {
+                    console.warn("Firestore (db) not initialized. Cannot fetch user role from Firestore.");
+                    currentUserRole = 'guest'; // Fallback if db is not available
                 }
             } else {
                 console.log("User is null, setting to guest mode.");
@@ -546,7 +559,7 @@
         async function completeRegistration() {
             console.log("Attempting complete registration...");
             if (!auth) {
-                console.error("Firebase Auth is not initialized.");
+                console.error("Firebase Auth is not initialized. Cannot complete registration.");
                 document.getElementById('regMessage').textContent = 'Erro: Serviço de autenticação não disponível. Tente novamente mais tarde.';
                 return;
             }
@@ -583,15 +596,21 @@
                 console.log("User created in Firebase Auth:", userCredential.user.uid);
 
                 // Create user document in Firestore with detailed info and default 'user' role
-                await setDoc(doc(db, 'users', userCredential.user.uid), {
-                    uid: userCredential.user.uid,
-                    email: userCredential.user.email,
-                    fullName: fullName,
-                    cpf: cpf,
-                    dateOfBirth: dateOfBirth,
-                    role: 'user' // Default role
-                });
-                console.log("User profile saved to Firestore.");
+                if (db) { // Ensure db is initialized before trying to access Firestore
+                    await setDoc(doc(db, 'users', userCredential.user.uid), {
+                        uid: userCredential.user.uid,
+                        email: userCredential.user.email,
+                        fullName: fullName,
+                        cpf: cpf,
+                        dateOfBirth: dateOfBirth,
+                        role: 'user' // Default role
+                    });
+                    console.log("User profile saved to Firestore.");
+                } else {
+                    console.warn("Firestore (db) not initialized. User profile not saved to Firestore.");
+                    window.showMessageBox("Perfil de usuário não salvo no Firestore (banco de dados não disponível).", 5000);
+                }
+
                 regMessage.textContent = 'Cadastro realizado com sucesso! Você pode fazer o login agora.';
                 window.showMessageBox('Cadastro realizado com sucesso! Faça o login.', 4000);
                 window.closeRegistrationModal();
@@ -1553,11 +1572,11 @@
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', async () => {
             console.log("DOMContentLoaded fired.");
-            console.log("Firebase Config:", firebaseConfig);
-            console.log("Initial Auth Token:", initialAuthToken);
+            console.log("Firebase Config (from hardcoded):", firebaseConfig); // Log the hardcoded config
+            console.log("Initial Auth Token (from environment):", initialAuthToken);
 
             // Initialize Firebase
-            if (firebaseConfig) {
+            if (firebaseConfig && firebaseConfig.apiKey) { // Ensure firebaseConfig is not null and has an API key
                 try {
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
@@ -1595,7 +1614,7 @@
                     updateAdminUI(); // Ensure UI is updated for guest mode
                 }
             } else {
-                console.warn("Firebase config not found. Falling back to localStorage for data, authentication features disabled.");
+                console.warn("Firebase config is missing or incomplete. Falling back to localStorage for data, authentication features disabled.");
                 // If no Firebase config, proceed with localStorage only
                 db = null; // Ensure db is null
                 auth = null; // Ensure auth is null
