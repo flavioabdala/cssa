@@ -206,7 +206,7 @@
             .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
             .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
             /* Calculate remaining width for days dynamically */
-            .printable-table th:nth-child(n+5) { width: calc(65% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
+            .printable-table th:nth-child(n+5) { width: calc(65% / var(--days-in-month)); } /* Days */
 
             .printable-footer {
                 position: fixed;
@@ -1320,6 +1320,7 @@
         // --- Print Functionality ---
 
         function printSchedule() {
+            const daysInCurrentMonthForPrint = getDaysInMonth(currentYear, currentMonth); // Pre-calculate
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
                 <!DOCTYPE html>
@@ -1365,7 +1366,7 @@
                         .printable-table th:nth-child(2) { width: 7%; } /* Função */
                         .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
                         .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
-                        .printable-table th:nth-child(n+5) { width: calc(65% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
+                        .printable-table th:nth-child(n+5) { width: calc(65% / ${daysInCurrentMonthForPrint}); } /* Days */
 
                         @page {
                             size: landscape; /* Default to landscape */
