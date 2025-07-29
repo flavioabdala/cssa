@@ -1,9 +1,9 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escala do Centro de SaÃºde</title>
+    <title>Escala do Centro de Saúde</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -202,9 +202,9 @@
             }
             /* Adjust column widths for print if needed */
             .printable-table th:nth-child(1) { width: 12%; } /* Nome */
-            .printable-table th:nth-child(2) { width: 7%; } /* FunÃ§Ã£o */
+            .printable-table th:nth-child(2) { width: 7%; } /* Função */
             .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
-            .printable-table th:nth-child(4) { width: 7%; } /* HorÃ¡rio de Trabalho */
+            .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
             /* Calculate remaining width for days dynamically using CSS variable */
             .printable-table th:nth-child(n+5) { width: calc(65% / var(--days-in-month)); }
 
@@ -253,8 +253,8 @@
     <!-- Main Application Content -->
     <div id="appContent" class="container hidden">
         <div class="header">
-            <h1 class="text-3xl font-bold mb-2">Escala do Centro de SaÃºde</h1>
-            <p class="text-lg">Gerencie a escala da sua equipe de forma fÃ¡cil e eficiente.</p>
+            <h1 class="text-3xl font-bold mb-2">Escala do Centro de Saúde</h1>
+            <p class="text-lg">Gerencie a escala da sua equipe de forma fácil e eficiente.</p>
             <div class="mt-4 flex justify-center items-center">
                 <span id="userStatus" class="text-sm font-medium mr-4"></span>
                 <button id="logoutBtn" class="btn-secondary px-4 py-2">Sair</button>
@@ -263,25 +263,25 @@
 
         <!-- Month Navigation -->
         <div class="flex justify-between items-center mb-6">
-            <button id="prevMonth" class="btn-secondary px-4 py-2 rounded-lg">&lt; MÃªs Anterior</button>
+            <button id="prevMonth" class="btn-secondary px-4 py-2 rounded-lg">&lt; Mês Anterior</button>
             <h2 id="currentMonthYear" class="text-2xl font-semibold text-gray-700"></h2>
-            <button id="nextMonth" class="btn-secondary px-4 py-2 rounded-lg">PrÃ³ximo MÃªs &gt;</button>
+            <button id="nextMonth" class="btn-secondary px-4 py-2 rounded-lg">Próximo Mês &gt;</button>
         </div>
 
         <!-- Employee Management Section (Admin Only) -->
         <div id="employeeManagementSection" class="bg-blue-50 p-6 rounded-lg shadow-md mb-8 admin-only">
-            <h3 class="text-xl font-semibold mb-4 text-blue-800">Gerenciamento de FuncionÃ¡rios</h3>
+            <h3 class="text-xl font-semibold mb-4 text-blue-800">Gerenciamento de Funcionários</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <input type="text" id="employeeName" placeholder="Nome do FuncionÃ¡rio" class="input-field">
+                <input type="text" id="employeeName" placeholder="Nome do Funcionário" class="input-field">
                 <select type="text" id="employeeRole" class="input-field">
-                    <option value="">Selecione a FunÃ§Ã£o</option>
-                    <option value="TÃ©cnico">TÃ©cnico</option>
+                    <option value="">Selecione a Função</option>
+                    <option value="Técnico">Técnico</option>
                     <option value="Enfermeiro">Enfermeiro</option>
                     <option value="Outro">Outro</option>
                 </select>
-                <input type="text" id="customEmployeeRole" placeholder="FunÃ§Ã£o Personalizada" class="input-field hidden">
+                <input type="text" id="customEmployeeRole" placeholder="Função Personalizada" class="input-field hidden">
                 <input type="text" id="employeeCouncil" placeholder="Registro do Conselho" class="input-field">
-                <input type="text" id="employeeWorkShift" placeholder="HorÃ¡rio de Trabalho (Ex: 08h-17h)" class="input-field">
+                <input type="text" id="employeeWorkShift" placeholder="Horário de Trabalho (Ex: 08h-17h)" class="input-field">
             </div>
             <div class="mb-4">
                 <label for="employeeTeam" class="block text-sm font-medium text-gray-700 mb-1">Equipe:</label>
@@ -295,10 +295,12 @@
                     <option value="Apoio">Apoio</option>
                 </select>
             </div>
-            <button id="addEmployeeBtn" class="btn-primary w-full md:w-auto">Adicionar FuncionÃ¡rio</button>
+            <button id="addEmployeeBtn" class="btn-primary w-full md:w-auto">Adicionar Funcionário</button>
+            <button id="manageSiglasBtn" class="btn-secondary w-full md:w-auto ml-0 md:ml-4 mt-4 md:mt-0">Gerenciar Siglas</button>
+
 
             <div id="employeeList" class="mt-6">
-                <h4 class="text-lg font-medium mb-3 text-gray-700">FuncionÃ¡rios Cadastrados:</h4>
+                <h4 class="text-lg font-medium mb-3 text-gray-700">Funcionários Cadastrados:</h4>
                 <ul id="employeesUl" class="space-y-2">
                     <!-- Employee items will be dynamically added here -->
                 </ul>
@@ -311,9 +313,9 @@
                 <thead>
                     <tr id="scheduleHeader">
                         <th class="w-1/6">Nome</th>
-                        <th class="w-1/12">FunÃ§Ã£o</th>
+                        <th class="w-1/12">Função</th>
                         <th class="w-1/12">Conselho</th>
-                        <th class="w-1/12">HorÃ¡rio de Trabalho</th>
+                        <th class="w-1/12">Horário de Trabalho</th>
                         <!-- Days of the month will be added here by JS -->
                     </tr>
                 </thead>
@@ -325,15 +327,15 @@
 
         <!-- Observations Section (Admin Only for input, Visible for all) -->
         <div class="bg-blue-50 p-6 rounded-lg shadow-md mt-8">
-            <h3 class="text-xl font-semibold mb-4 text-blue-800">ObservaÃ§Ãµes Mensais</h3>
-            <textarea id="monthlyObservations" class="input-field h-32 resize-y" placeholder="Adicione observaÃ§Ãµes importantes para este mÃªs..." readonly></textarea>
+            <h3 class="text-xl font-semibold mb-4 text-blue-800">Observações Mensais</h3>
+            <textarea id="monthlyObservations" class="input-field h-32 resize-y" placeholder="Adicione observações importantes para este mês..." readonly></textarea>
         </div>
 
         <!-- Action Buttons (Admin Only for Save/Copy) -->
         <div class="flex justify-center mt-8 space-x-4">
             <button id="printScheduleBtn" class="btn-primary">Imprimir Escala</button>
             <button id="saveScheduleBtn" class="btn-primary admin-only">Salvar Escala</button>
-            <button id="copyToNextMonthBtn" class="btn-primary admin-only">Transcrever para o MÃªs Seguinte</button>
+            <button id="copyToNextMonthBtn" class="btn-primary admin-only">Transcrever para o Mês Seguinte</button>
         </div>
     </div>
 
@@ -347,30 +349,19 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Sigla Section - General (for month) -->
                 <div id="siglaSectionMonth" class="bg-gray-50 p-4 rounded-lg shadow-sm admin-only">
-                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o MÃªs</h4>
+                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o Mês</h4>
                     <div class="mb-4 space-y-2" id="siglaCheckboxesMonth">
-                        <!-- Sigla checkboxes will be generated here -->
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="F" class="mr-2"> F (FarmÃ¡cia)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="S" class="mr-2"> S (Sala de ObservaÃ§Ã£o)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="P" class="mr-2"> P (Presente)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="CT" class="mr-2"> CT (Curativo)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="BR" class="mr-2"> BR (Acolhimento Baixo Risco)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="E" class="mr-2"> E (ECG)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="V" class="mr-2"> V (Vacina)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="T" class="mr-2"> T (Totem)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="C" class="mr-2"> C (ConsultÃ³rios)</label>
+                        <!-- Sigla checkboxes will be generated here dynamically -->
                     </div>
-                    <button id="applySiglaMonthBtn" class="btn-primary w-full">Aplicar Sigla(s) para o MÃªs</button>
-                    <button id="clearSiglasMonthBtn" class="btn-secondary w-full mt-2">Limpar Siglas do MÃªs</button>
+                    <button id="applySiglaMonthBtn" class="btn-primary w-full">Aplicar Sigla(s) para o Mês</button>
+                    <button id="clearSiglasMonthBtn" class="btn-secondary w-full mt-2">Limpar Siglas do Mês</button>
                 </div>
 
                 <!-- Sigla Section - Specific Day (for FO/LM) (Admin Only) -->
                 <div id="siglaSectionDay" class="bg-gray-50 p-4 rounded-lg shadow-sm hidden admin-only">
                     <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o Dia <span id="modalDayNumber"></span></h4>
                     <div class="mb-4 space-y-2" id="siglaCheckboxesDay">
-                        <label class="flex items-center"><input type="checkbox" name="siglaDay" value="FO" class="mr-2"> FO (Folga)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaDay" value="LM" class="mr-2"> LM (LicenÃ§a MÃ©dica)</label>
-                        <!-- Other siglas can be added here if needed for single day -->
+                        <!-- Sigla checkboxes will be generated here dynamically -->
                     </div>
                     <button id="applySiglaDayBtn" class="btn-primary w-full">Aplicar Sigla(s) para o Dia</button>
                     <button id="clearSiglasDayBtn" class="btn-secondary w-full mt-2">Limpar Siglas do Dia</button>
@@ -378,20 +369,51 @@
 
                 <!-- Vacation Section (Admin Only) -->
                 <div id="vacationSection" class="bg-gray-50 p-4 rounded-lg shadow-sm admin-only">
-                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar FÃ©rias</h4>
+                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Férias</h4>
                     <div class="mb-4">
-                        <label for="vacationStart" class="block text-sm font-medium text-gray-700 mb-1">InÃ­cio das FÃ©rias:</label>
+                        <label for="vacationStart" class="block text-sm font-medium text-gray-700 mb-1">Início das Férias:</label>
                         <input type="date" id="vacationStart" class="input-field">
                     </div>
                     <div class="mb-4">
-                        <label for="vacationEnd" class="block text-sm font-medium text-gray-700 mb-1">Fim das FÃ©rias:</label>
+                        <label for="vacationEnd" class="block text-sm font-medium text-gray-700 mb-1">Fim das Férias:</label>
                         <input type="date" id="vacationEnd" class="input-field">
                     </div>
-                    <button id="applyVacationBtn" class="btn-primary w-full">Aplicar FÃ©rias</button>
-                    <button id="clearVacationBtn" class="btn-secondary w-full mt-2">Limpar FÃ©rias</button>
+                    <button id="applyVacationBtn" class="btn-primary w-full">Aplicar Férias</button>
+                    <button id="clearVacationBtn" class="btn-secondary w-full mt-2">Limpar Férias</button>
                 </div>
             </div>
-            <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6 admin-only">Limpar Toda a Escala do FuncionÃ¡rio</button>
+            <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6 admin-only">Limpar Toda a Escala do Funcionário</button>
+        </div>
+    </div>
+
+    <!-- Manage Siglas Modal -->
+    <div id="manageSiglasModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-button" onclick="window.closeManageSiglasModal()">&times;</button>
+            <h3 class="text-2xl font-bold mb-4 text-blue-700">Gerenciar Siglas</h3>
+
+            <div class="mb-6 bg-gray-50 p-4 rounded-lg shadow-sm">
+                <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Nova Sigla</h4>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="newSiglaValue" class="block text-sm font-medium text-gray-700 mb-1">Sigla (Ex: F, FO)</label>
+                        <input type="text" id="newSiglaValue" placeholder="Valor da Sigla" class="input-field uppercase" maxlength="3">
+                    </div>
+                    <div>
+                        <label for="newSiglaDescription" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                        <input type="text" id="newSiglaDescription" placeholder="Descrição da Sigla" class="input-field">
+                    </div>
+                </div>
+                <button id="addSiglaBtn" class="btn-primary w-full">Adicionar Sigla</button>
+                <p id="addSiglaMessage" class="text-red-500 mt-2"></p>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                <h4 class="text-lg font-semibold mb-3 text-gray-800">Siglas Existentes</h4>
+                <ul id="customSiglasList" class="space-y-2">
+                    <!-- Custom siglas will be dynamically added here -->
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -434,20 +456,21 @@
         let currentEditingEmployeeId = null;
         let currentEditingDateKey = null; // Stores the date key if a specific day is being edited
         let monthlyObservations = {}; // Stores observations per month/year
+        let customSiglas = []; // Stores dynamically loaded siglas
 
-        // Brazilian National Holidays (example for 2025)
+        // Brazilian National Holidays (example for 2025) - These are still hardcoded as they are not part of the sigla management
         const nationalHolidays = [
-            '2025-01-01', // ConfraternizaÃ§Ã£o Universal
+            '2025-01-01', // Confraternização Universal
             '2025-03-03', // Carnaval (Monday)
             '2025-03-04', // Carnaval (Tuesday)
-            '2025-04-18', // PaixÃ£o de Cristo
+            '2025-04-18', // Paixão de Cristo
             '2025-04-21', // Tiradentes
             '2025-05-01', // Dia do Trabalho
             '2025-06-19', // Corpus Christi
-            '2025-09-07', // IndependÃªncia do Brasil
+            '2025-09-07', // Independência do Brasil
             '2025-10-12', // Nossa Senhora Aparecida
             '2025-11-02', // Finados
-            '2025-11-15', // ProclamaÃ§Ã£o da RepÃºblica
+            '2025-11-15', // Proclamação da República
             '2025-12-25'  // Natal
         ];
 
@@ -513,9 +536,9 @@
                             currentUserRole = 'user';
                         }
                     } catch (error) {
-                        console.error("Erro ao carregar/criar documento do usuÃ¡rio:", error);
+                        console.error("Erro ao carregar/criar documento do usuário:", error);
                         currentUserRole = 'user'; // Fallback
-                        window.showMessageBox("Erro ao carregar perfil do usuÃ¡rio. Tente novamente.", 5000);
+                        window.showMessageBox("Erro ao carregar perfil do usuário. Tente novamente.", 5000);
                     }
                 } else {
                     console.warn("Firestore (db) not initialized. Cannot fetch user role from Firestore.");
@@ -533,6 +556,7 @@
             isAuthReady = true;
             loadEmployees(); // Load data after auth state is determined
             loadMonthlyObservations();
+            loadCustomSiglas(); // Load custom siglas after auth state is determined
         }
 
         // --- Authentication Functions ---
@@ -561,7 +585,7 @@
             console.log("Attempting complete registration...");
             if (!auth) {
                 console.error("Firebase Auth is not initialized. Cannot complete registration.");
-                document.getElementById('regMessage').textContent = 'Erro: ServiÃ§o de autenticaÃ§Ã£o nÃ£o disponÃ­vel. Tente novamente mais tarde.';
+                document.getElementById('regMessage').textContent = 'Erro: Serviço de autenticação não disponível. Tente novamente mais tarde.';
                 return;
             }
 
@@ -580,7 +604,7 @@
             }
 
             if (password !== passwordConfirm) {
-                regMessage.textContent = 'As senhas nÃ£o coincidem.';
+                regMessage.textContent = 'As senhas não coincidem.';
                 console.log("Registration failed: Passwords do not match.");
                 return;
             }
@@ -609,11 +633,11 @@
                     console.log("User profile saved to Firestore.");
                 } else {
                     console.warn("Firestore (db) not initialized. User profile not saved to Firestore.");
-                    window.showMessageBox("Perfil de usuÃ¡rio nÃ£o salvo no Firestore (banco de dados nÃ£o disponÃ­vel).", 5000);
+                    window.showMessageBox("Perfil de usuário não salvo no Firestore (banco de dados não disponível).", 5000);
                 }
 
-                regMessage.textContent = 'Cadastro realizado com sucesso! VocÃª pode fazer o login agora.';
-                window.showMessageBox('Cadastro realizado com sucesso! FaÃ§a o login.', 4000);
+                regMessage.textContent = 'Cadastro realizado com sucesso! Você pode fazer o login agora.';
+                window.showMessageBox('Cadastro realizado com sucesso! Faça o login.', 4000);
                 window.closeRegistrationModal();
             } catch (error) {
                 console.error("Erro no cadastro completo:", error);
@@ -626,7 +650,7 @@
             console.log("Attempting login...");
             if (!auth) {
                 console.error("Firebase Auth is not initialized.");
-                document.getElementById('authMessage').textContent = 'Erro: ServiÃ§o de autenticaÃ§Ã£o nÃ£o disponÃ­vel. Tente novamente mais tarde.';
+                document.getElementById('authMessage').textContent = 'Erro: Serviço de autenticação não disponível. Tente novamente mais tarde.';
                 return;
             }
 
@@ -655,13 +679,13 @@
             console.log("Attempting logout...");
             if (!auth) {
                 console.error("Firebase Auth is not initialized.");
-                window.showMessageBox('Erro: ServiÃ§o de autenticaÃ§Ã£o nÃ£o disponÃ­vel.', 3000);
+                window.showMessageBox('Erro: Serviço de autenticação não disponível.', 3000);
                 return;
             }
             try {
                 await signOut(auth);
                 console.log("Logout successful.");
-                window.showMessageBox('VocÃª foi desconectado.');
+                window.showMessageBox('Você foi desconectado.');
             } catch (error) {
                 console.error("Erro ao fazer logout:", error);
                 window.showMessageBox(`Erro ao fazer logout: ${error.message}`);
@@ -672,13 +696,13 @@
         function saveEmployees() {
             // Only allow admin to save employees
             if (currentUserRole !== 'admin') {
-                console.warn("Apenas administradores podem salvar funcionÃ¡rios.");
+                console.warn("Apenas administradores podem salvar funcionários.");
                 return;
             }
             if (userId && db) {
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'employees');
                 setDoc(docRef, { data: JSON.stringify(employees) })
-                    .catch(error => console.error("Erro ao salvar funcionÃ¡rios no Firestore:", error));
+                    .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
             } else {
                 // Fallback to localStorage if Firebase is not initialized (should not happen for saving if auth is required)
                 localStorage.setItem('healthScheduleEmployees', JSON.stringify(employees));
@@ -699,7 +723,7 @@
                         console.log("No employees document found in Firestore.");
                     }
                 } catch (error) {
-                    console.error("Erro ao carregar funcionÃ¡rios do Firestore:", error);
+                    console.error("Erro ao carregar funcionários do Firestore:", error);
                     employees = [];
                 }
             } else {
@@ -715,7 +739,7 @@
         function saveMonthlyObservations() {
             // Only allow admin to save observations
             if (currentUserRole !== 'admin') {
-                console.warn("Apenas administradores podem salvar observaÃ§Ãµes.");
+                console.warn("Apenas administradores podem salvar observações.");
                 return;
             }
             const key = `${currentYear}-${currentMonth + 1}`;
@@ -723,7 +747,7 @@
             if (userId && db) {
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'observations');
                 setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
-                    .catch(error => console.error("Erro ao salvar observaÃ§Ãµes no Firestore:", error));
+                    .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
             } else {
                 localStorage.setItem('healthScheduleObservations', JSON.stringify(monthlyObservations));
             }
@@ -743,7 +767,7 @@
                         console.log("No monthly observations document found in Firestore.");
                     }
                 } catch (error) {
-                    console.error("Erro ao carregar observaÃ§Ãµes do Firestore:", error);
+                    console.error("Erro ao carregar observações do Firestore:", error);
                     monthlyObservations = {};
                 }
             } else {
@@ -754,6 +778,191 @@
             const key = `${currentYear}-${currentMonth + 1}`;
             document.getElementById('monthlyObservations').value = monthlyObservations[key] || '';
         }
+
+        // --- Custom Siglas Management Functions ---
+        function saveCustomSiglas() {
+            if (currentUserRole !== 'admin') {
+                console.warn("Apenas administradores podem salvar siglas personalizadas.");
+                return;
+            }
+            if (userId && db) {
+                const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'custom_siglas');
+                setDoc(docRef, { data: JSON.stringify(customSiglas) })
+                    .catch(error => console.error("Erro ao salvar siglas personalizadas no Firestore:", error));
+            } else {
+                localStorage.setItem('healthScheduleCustomSiglas', JSON.stringify(customSiglas));
+            }
+        }
+
+        async function loadCustomSiglas() {
+            console.log("Loading custom siglas...");
+            if (userId && db) {
+                const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'custom_siglas');
+                try {
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        customSiglas = JSON.parse(docSnap.data().data);
+                        console.log("Custom siglas loaded from Firestore.");
+                    } else {
+                        // Default siglas if none are found in Firestore
+                        customSiglas = [
+                            { value: 'F', description: 'Farmácia' },
+                            { value: 'S', description: 'Sala de Observação' },
+                            { value: 'P', description: 'Presente' },
+                            { value: 'CT', description: 'Curativo' },
+                            { value: 'BR', description: 'Acolhimento Baixo Risco' },
+                            { value: 'E', description: 'ECG' },
+                            { value: 'V', description: 'Vacina' },
+                            { value: 'T', description: 'Totem' },
+                            { value: 'C', description: 'Consultórios' },
+                            { value: 'FO', description: 'Folga' }, // FO and LM are special
+                            { value: 'LM', description: 'Licença Médica' } // Special
+                        ];
+                        console.log("No custom siglas document found, using defaults.");
+                        // Optionally save defaults to Firestore on first load
+                        saveCustomSiglas();
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar siglas personalizadas do Firestore:", error);
+                    customSiglas = [ // Fallback to hardcoded defaults on error
+                        { value: 'F', description: 'Farmácia' },
+                        { value: 'S', description: 'Sala de Observação' },
+                        { value: 'P', description: 'Presente' },
+                        { value: 'CT', description: 'Curativo' },
+                        { value: 'BR', description: 'Acolhimento Baixo Risco' },
+                        { value: 'E', description: 'ECG' },
+                        { value: 'V', description: 'Vacina' },
+                        { value: 'T', description: 'Totem' },
+                        { value: 'C', description: 'Consultórios' },
+                        { value: 'FO', description: 'Folga' },
+                        { value: 'LM', description: 'Licença Médica' }
+                    ];
+                }
+            } else {
+                console.log("Firebase not ready or user not authenticated, loading custom siglas from localStorage.");
+                const storedSiglas = localStorage.getItem('healthScheduleCustomSiglas');
+                customSiglas = storedSiglas ? JSON.parse(storedSiglas) : [
+                    { value: 'F', description: 'Farmácia' },
+                    { value: 'S', description: 'Sala de Observação' },
+                    { value: 'P', description: 'Presente' },
+                    { value: 'CT', description: 'Curativo' },
+                    { value: 'BR', description: 'Acolhimento Baixo Risco' },
+                    { value: 'E', description: 'ECG' },
+                    { value: 'V', description: 'Vacina' },
+                    { value: 'T', description: 'Totem' },
+                    { value: 'C', description: 'Consultórios' },
+                    { value: 'FO', description: 'Folga' },
+                    { value: 'LM', description: 'Licença Médica' }
+                ];
+            }
+            // After loading, render the lists in the modals
+            renderCustomSiglasCheckboxes();
+            renderCustomSiglasList();
+        }
+
+        function renderCustomSiglasCheckboxes() {
+            const siglaCheckboxesMonthDiv = document.getElementById('siglaCheckboxesMonth');
+            const siglaCheckboxesDayDiv = document.getElementById('siglaCheckboxesDay');
+
+            if (!siglaCheckboxesMonthDiv || !siglaCheckboxesDayDiv) {
+                console.warn("Sigla checkbox divs not found.");
+                return;
+            }
+
+            siglaCheckboxesMonthDiv.innerHTML = '';
+            siglaCheckboxesDayDiv.innerHTML = '';
+
+            // Filter out FO and LM for the monthly general selection
+            const generalSiglas = customSiglas.filter(s => s.value !== 'FO' && s.value !== 'LM');
+            // FO and LM are specific for daily selection
+            const dailySiglas = customSiglas.filter(s => s.value === 'FO' || s.value === 'LM');
+
+            generalSiglas.forEach(sigla => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center';
+                label.innerHTML = `<input type="checkbox" name="siglaMonth" value="${sigla.value}" class="mr-2"> ${sigla.value} (${sigla.description})`;
+                siglaCheckboxesMonthDiv.appendChild(label);
+            });
+
+            dailySiglas.forEach(sigla => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center';
+                label.innerHTML = `<input type="checkbox" name="siglaDay" value="${sigla.value}" class="mr-2"> ${sigla.value} (${sigla.description})`;
+                siglaCheckboxesDayDiv.appendChild(label);
+            });
+        }
+
+        window.openManageSiglasModal = function() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem gerenciar siglas.', 3000);
+                return;
+            }
+            document.getElementById('manageSiglasModal').classList.remove('hidden');
+            document.getElementById('newSiglaValue').value = '';
+            document.getElementById('newSiglaDescription').value = '';
+            document.getElementById('addSiglaMessage').textContent = '';
+            renderCustomSiglasList(); // Ensure the list is up-to-date
+        }
+
+        window.closeManageSiglasModal = function() {
+            document.getElementById('manageSiglasModal').classList.add('hidden');
+            renderCustomSiglasCheckboxes(); // Re-render checkboxes in other modals after changes
+            renderSchedule(); // Re-render schedule in case siglas were deleted/changed
+        }
+
+        function renderCustomSiglasList() {
+            const customSiglasListUl = document.getElementById('customSiglasList');
+            customSiglasListUl.innerHTML = '';
+            if (customSiglas.length === 0) {
+                customSiglasListUl.innerHTML = '<li class="text-gray-500">Nenhuma sigla personalizada.</li>';
+                return;
+            }
+
+            customSiglas.forEach(sigla => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
+                li.innerHTML = `
+                    <span><strong>${sigla.value}</strong>: ${sigla.description}</span>
+                    <button onclick="window.deleteCustomSigla('${sigla.value}')" class="btn-danger ml-2">Excluir</button>
+                `;
+                customSiglasListUl.appendChild(li);
+            });
+        }
+
+        function addCustomSigla() {
+            const value = document.getElementById('newSiglaValue').value.trim().toUpperCase();
+            const description = document.getElementById('newSiglaDescription').value.trim();
+            const addSiglaMessage = document.getElementById('addSiglaMessage');
+
+            if (!value || !description) {
+                addSiglaMessage.textContent = 'Por favor, preencha o valor e a descrição da sigla.';
+                return;
+            }
+            if (customSiglas.some(s => s.value === value)) {
+                addSiglaMessage.textContent = 'Esta sigla já existe.';
+                return;
+            }
+
+            customSiglas.push({ value, description });
+            saveCustomSiglas();
+            renderCustomSiglasList();
+            renderCustomSiglasCheckboxes(); // Update checkboxes in other modals
+            document.getElementById('newSiglaValue').value = '';
+            document.getElementById('newSiglaDescription').value = '';
+            addSiglaMessage.textContent = '';
+            window.showMessageBox('Sigla adicionada com sucesso!');
+        }
+
+        window.deleteCustomSigla = function(valueToDelete) {
+            if (window.confirm(`Tem certeza que deseja excluir a sigla "${valueToDelete}"? Isso pode afetar escalas existentes.`)) {
+                customSiglas = customSiglas.filter(s => s.value !== valueToDelete);
+                saveCustomSiglas();
+                renderCustomSiglasList();
+                renderCustomSiglasCheckboxes(); // Update checkboxes in other modals
+                window.showMessageBox('Sigla excluída.');
+            }
+        }
+
 
         // New function to save both employees and observations
         function saveAllData() {
@@ -821,14 +1030,14 @@
         }
 
         function sortEmployeesByRole(empArray) {
-            // Sort by role: TÃ©cnicos first, then Enfermeiros, then others alphabetically
+            // Sort by role: Técnicos first, then Enfermeiros, then others alphabetically
             return [...empArray].sort((a, b) => {
                 const roleA = a.role.toLowerCase();
                 const roleB = b.role.toLowerCase();
 
-                // Prioritize "TÃ©cnico"
-                if (roleA.includes('tÃ©cnico') && !roleB.includes('tÃ©cnico')) return -1;
-                if (!roleA.includes('tÃ©cnico') && roleB.includes('tÃ©cnico')) return 1;
+                // Prioritize "Técnico"
+                if (roleA.includes('técnico') && !roleB.includes('técnico')) return -1;
+                if (!roleA.includes('técnico') && roleB.includes('técnico')) return 1;
 
                 // Then "Enfermeiro"
                 if (roleA.includes('enfermeiro') && !roleB.includes('enfermeiro')) return -1;
@@ -844,7 +1053,7 @@
             const employeesUl = document.getElementById('employeesUl');
             employeesUl.innerHTML = '';
             if (employees.length === 0) {
-                employeesUl.innerHTML = '<li class="text-gray-500">Nenhum funcionÃ¡rio cadastrado.</li>';
+                employeesUl.innerHTML = '<li class="text-gray-500">Nenhum funcionário cadastrado.</li>';
                 return;
             }
 
@@ -877,9 +1086,9 @@
             const scheduleBody = document.getElementById('scheduleBody');
             scheduleHeader.innerHTML = `
                 <th class="w-1/6">Nome</th>
-                <th class="w-1/12">FunÃ§Ã£o</th>
+                <th class="w-1/12">Função</th>
                 <th class="w-1/12">Conselho</th>
-                <th class="w-1/12">HorÃ¡rio de Trabalho</th>
+                <th class="w-1/12">Horário de Trabalho</th>
             `;
             scheduleBody.innerHTML = '';
 
@@ -926,7 +1135,7 @@
 
                     if (isVacation(emp, currentYear, currentMonth, i)) {
                         td.classList.add('vacation');
-                        td.textContent = 'FÃ‰RIAS';
+                        td.textContent = 'FÉRIAS';
                         // Merge cells for vacation if it's the start of a vacation block
                         const nextDayIsVacation = isVacation(emp, currentYear, currentMonth, i + 1);
                         const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
@@ -966,7 +1175,7 @@
 
         function addEmployee() {
             if (currentUserRole !== 'admin') {
-                window.showMessageBox('Apenas administradores podem adicionar funcionÃ¡rios.', 3000);
+                window.showMessageBox('Apenas administradores podem adicionar funcionários.', 3000);
                 return;
             }
             console.log("Attempting to add employee...");
@@ -1003,26 +1212,26 @@
                 document.getElementById('employeeCouncil').value = '';
                 document.getElementById('employeeWorkShift').value = '';
                 document.getElementById('employeeTeam').value = '';
-                window.showMessageBox('FuncionÃ¡rio adicionado com sucesso!');
+                window.showMessageBox('Funcionário adicionado com sucesso!');
                 console.log("Employee added:", newEmployee);
             } else {
-                window.showMessageBox('Por favor, preencha todos os campos do funcionÃ¡rio.', 4000);
+                window.showMessageBox('Por favor, preencha todos os campos do funcionário.', 4000);
                 console.log("Failed to add employee: Missing fields.");
             }
         }
 
         window.deleteEmployee = function(id) {
             if (currentUserRole !== 'admin') {
-                window.showMessageBox('Apenas administradores podem excluir funcionÃ¡rios.', 3000);
+                window.showMessageBox('Apenas administradores podem excluir funcionários.', 3000);
                 return;
             }
             console.log("Attempting to delete employee:", id);
-            if (window.confirm('Tem certeza que deseja excluir este funcionÃ¡rio?')) {
+            if (window.confirm('Tem certeza que deseja excluir este funcionário?')) {
                 employees = employees.filter(emp => emp.id !== id);
                 saveEmployees();
                 renderEmployeeList();
                 renderSchedule();
-                window.showMessageBox('FuncionÃ¡rio excluÃ­do.');
+                window.showMessageBox('Funcionário excluído.');
                 console.log("Employee deleted.");
             }
         }
@@ -1051,14 +1260,18 @@
                     siglaSectionDay.classList.add('hidden');
                     document.getElementById('vacationSection').classList.add('hidden'); // Hide vacation section for non-admin
                     document.getElementById('clearEmployeeScheduleBtn').classList.add('hidden'); // Hide clear all button for non-admin
-                    window.showMessageBox('VocÃª nÃ£o tem permissÃ£o para editar a escala.', 3000);
+                    window.showMessageBox('Você não tem permissão para editar a escala.', 3000);
                     console.log("Non-admin attempting to open edit modal, denied.");
                     return; // Prevent modal from opening for non-admin if they click on an editable area
                 } else {
                     siglaSectionMonth.classList.remove('hidden'); // Ensure it's visible for admin
+                    siglaSectionDay.classList.remove('hidden'); // Ensure it's visible for admin
                     document.getElementById('vacationSection').classList.remove('hidden');
                     document.getElementById('clearEmployeeScheduleBtn').classList.remove('hidden');
                 }
+
+                // Re-render checkboxes based on current custom siglas
+                renderCustomSiglasCheckboxes();
 
 
                 if (currentEditingDateKey) {
@@ -1106,7 +1319,7 @@
                         const siglasForDay = employee.schedule && employee.schedule[dateKey] ? employee.schedule[dateKey] : [];
                         if (Array.isArray(siglasForDay)) {
                             // Exclude FO and LM from general month view pre-check
-                            siglasForDay.filter(s => s !== 'FO' && s !== 'LM').forEach(sigla => currentMonthSiglas.add(sigla));
+                            siglasForDay.filter(s => s !== 'FO' && s !== 'LM').forEach(sigla => currentMonthSiglas.add(s));
                         } else if (typeof siglasForDay === 'string' && siglasForDay !== '' && siglasForDay !== 'FO' && siglasForDay !== 'LM') {
                             // Handle old string format: treat as a single sigla
                             currentMonthSiglas.add(siglasForDay);
@@ -1160,7 +1373,7 @@
             }
             saveEmployees();
             renderSchedule();
-            window.showMessageBox('Sigla(s) aplicada(s) para os dias Ãºteis do mÃªs.');
+            window.showMessageBox('Sigla(s) aplicada(s) para os dias úteis do mês.');
             window.closeSiglaVacationModal();
             console.log("Monthly siglas applied.");
         }
@@ -1171,7 +1384,7 @@
                 return;
             }
             console.log("Clearing monthly siglas...");
-            if (window.confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionÃ¡rio para o mÃªs atual?')) {
+            if (window.confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionário para o mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
 
@@ -1193,7 +1406,7 @@
                 }
                 saveEmployees();
                 renderSchedule();
-                window.showMessageBox('Siglas do funcionÃ¡rio para o mÃªs atual limpas.');
+                window.showMessageBox('Siglas do funcionário para o mês atual limpas.');
                 window.closeSiglaVacationModal();
                 console.log("Monthly siglas cleared.");
             }
@@ -1212,7 +1425,7 @@
                 return;
             }
             if (!currentEditingDateKey) {
-                window.showMessageBox('Erro: Dia nÃ£o selecionado para aplicar sigla.', 3000);
+                window.showMessageBox('Erro: Dia não selecionado para aplicar sigla.', 3000);
                 return;
             }
 
@@ -1238,7 +1451,7 @@
             }
             console.log("Clearing daily siglas...");
              if (!currentEditingDateKey) {
-                window.showMessageBox('Erro: Dia nÃ£o selecionado para limpar sigla.', 3000);
+                window.showMessageBox('Erro: Dia não selecionado para limpar sigla.', 3000);
                 return;
             }
             if (window.confirm(`Tem certeza que deseja limpar as siglas para o dia ${currentEditingDateKey.split('-')[2]}?`)) {
@@ -1260,7 +1473,7 @@
 
         function applyVacation() {
             if (currentUserRole !== 'admin') {
-                window.showMessageBox('Apenas administradores podem aplicar fÃ©rias.', 3000);
+                window.showMessageBox('Apenas administradores podem aplicar férias.', 3000);
                 return;
             }
             console.log("Applying vacation...");
@@ -1268,7 +1481,7 @@
             const vacationEnd = document.getElementById('vacationEnd').value;
 
             if (!vacationStart || !vacationEnd) {
-                window.showMessageBox('Por favor, selecione as datas de inÃ­cio e fim das fÃ©rias.', 4000);
+                window.showMessageBox('Por favor, selecione as datas de início e fim das férias.', 4000);
                 return;
             }
 
@@ -1276,7 +1489,7 @@
             const endDate = new Date(vacationEnd);
 
             if (startDate > endDate) {
-                window.showMessageBox('A data de inÃ­cio das fÃ©rias nÃ£o pode ser posterior Ã  data de fim.', 4000);
+                window.showMessageBox('A data de início das férias não pode ser posterior à data de fim.', 4000);
                 return;
             }
 
@@ -1298,14 +1511,14 @@
             employee.vacations.push({ start: vacationStart, end: vacationEnd });
             saveEmployees();
             renderSchedule();
-            window.showMessageBox('FÃ©rias aplicadas com sucesso!');
+            window.showMessageBox('Férias aplicadas com sucesso!');
             window.closeSiglaVacationModal();
             console.log("Vacation applied.");
         }
 
         function clearVacation() {
             if (currentUserRole !== 'admin') {
-                window.showMessageBox('Apenas administradores podem limpar fÃ©rias.', 3000);
+                window.showMessageBox('Apenas administradores podem limpar férias.', 3000);
                 return;
             }
             console.log("Clearing vacation...");
@@ -1317,18 +1530,18 @@
 
             saveEmployees();
             renderSchedule();
-            window.showMessageBox('FÃ©rias do funcionÃ¡rio limpas.');
+            window.showMessageBox('Férias do funcionário limpas.');
             window.closeSiglaVacationModal();
             console.log("Vacation cleared.");
         }
 
         function clearEmployeeSchedule() {
             if (currentUserRole !== 'admin') {
-                window.showMessageBox('Apenas administradores podem limpar a escala do funcionÃ¡rio.', 3000);
+                window.showMessageBox('Apenas administradores podem limpar a escala do funcionário.', 3000);
                 return;
             }
             console.log("Clearing all employee schedule and vacations...");
-            if (window.confirm('Tem certeza que deseja limpar toda a escala e fÃ©rias deste funcionÃ¡rio? Isso Ã© irreversÃ­vel.')) {
+            if (window.confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário? Isso é irreversível.')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
 
@@ -1338,7 +1551,7 @@
 
                 saveEmployees();
                 renderSchedule();
-                window.showMessageBox('Escala e fÃ©rias do funcionÃ¡rio limpas.');
+                window.showMessageBox('Escala e férias do funcionário limpas.');
                 window.closeSiglaVacationModal();
                 console.log("Employee schedule and vacations cleared.");
             }
@@ -1351,7 +1564,7 @@
                 return;
             }
             console.log("Copying schedule to next month...");
-            if (!window.confirm('Deseja transcrever a escala do mÃªs atual para o prÃ³ximo mÃªs? Isso copiarÃ¡ as siglas de dias Ãºteis, mas nÃ£o as folgas/licenÃ§as mÃ©dicas especÃ­ficas.')) {
+            if (!window.confirm('Deseja transcrever a escala do mês atual para o próximo mês? Isso copiará as siglas de dias úteis, mas não as folgas/licenças médicas específicas.')) {
                 return;
             }
 
@@ -1405,7 +1618,7 @@
             currentYear = nextYear;
             renderSchedule();
             loadMonthlyObservations(); // Ensure observations are loaded for the new month
-            window.showMessageBox('Escala transcrita para o mÃªs seguinte com sucesso!');
+            window.showMessageBox('Escala transcrita para o mês seguinte com sucesso!');
             console.log("Schedule copied to next month.");
         }
 
@@ -1462,9 +1675,9 @@
 
                         /* Column widths for print */
                         .printable-table th:nth-child(1) { width: 12%; } /* Nome */
-                        .printable-table th:nth-child(2) { width: 7%; } /* FunÃ§Ã£o */
+                        .printable-table th:nth-child(2) { width: 7%; } /* Função */
                         .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
-                        .printable-table th:nth-child(4) { width: 7%; } /* HorÃ¡rio de Trabalho */
+                        .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
                         .printable-table th:nth-child(n+5) { width: calc(65% / var(--days-in-month)); } /* Days */
 
                         @page {
@@ -1476,16 +1689,16 @@
                 <body>
                     <div class="printable-content">
                         <div class="printable-header">
-                            <h2>Escala do Centro de SaÃºde - ${document.getElementById('currentMonthYear').textContent}</h2>
+                            <h2>Escala do Centro de Saúde - ${document.getElementById('currentMonthYear').textContent}</h2>
                         </div>
                         <div class="printable-table-container">
                             <table class="printable-table">
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>FunÃ§Ã£o</th>
+                                        <th>Função</th>
                                         <th>Conselho</th>
-                                        <th>HorÃ¡rio de Trabalho</th>
+                                        <th>Horário de Trabalho</th>
                                         ${Array.from({ length: getDaysInMonth(currentYear, currentMonth) }, (_, i) => {
                                             const day = i + 1;
                                             const isDayWeekend = isWeekend(currentYear, currentMonth, day);
@@ -1513,7 +1726,7 @@
                                             let cellClasses = '';
 
                                             if (isVacation(emp, currentYear, currentMonth, i)) {
-                                                cellContent = 'FÃ‰RIAS';
+                                                cellContent = 'FÉRIAS';
                                                 cellClasses = 'vacation';
                                                 // Check if this is the start of a vacation block for merging
                                                 const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
@@ -1546,19 +1759,9 @@
                         <div class="printable-legend">
                             <h3>Legenda:</h3>
                             <ul>
-                                <li><strong>F:</strong> FarmÃ¡cia</li>
-                                <li><strong>S:</strong> Sala de ObservaÃ§Ã£o</li>
-                                <li><strong>P:</strong> Presente</li>
-                                <li><strong>CT:</strong> Curativo</li>
-                                <li><strong>BR:</strong> Acolhimento Baixo Risco</li>
-                                <li><strong>LM:</strong> LicenÃ§a MÃ©dica</li>
-                                <li><strong>FO:</strong> Folga</li>
-                                <li><strong>E:</strong> ECG</li>
-                                <li><strong>V:</strong> Vacina</li>
-                                <li><strong>T:</strong> Totem</li>
-                                <li><strong>C:</strong> ConsultÃ³rios</li>
+                                ${customSiglas.map(sigla => `<li><strong>${sigla.value}:</strong> ${sigla.description}</li>`).join('')}
                             </ul>
-                            <p><strong>ObservaÃ§Ãµes:</strong> ${monthlyObservations[`${currentYear}-${currentMonth + 1}`] || 'Nenhuma observaÃ§Ã£o para este mÃªs.'}</p>
+                            <p><strong>Observações:</strong> ${monthlyObservations[`${currentYear}-${currentMonth + 1}`] || 'Nenhuma observação para este mês.'}</p>
                         </div>
                     </div>
                 </body>
@@ -1590,7 +1793,7 @@
 
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase ou autenticar:", error);
-                    window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Funcionalidades de autenticaÃ§Ã£o e persistÃªncia nÃ£o estarÃ£o disponÃ­veis.`, 7000);
+                    window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Funcionalidades de autenticação e persistência não estarão disponíveis.`, 7000);
                     // Set auth and db to null explicitly to prevent further errors
                     db = null;
                     auth = null;
@@ -1600,6 +1803,7 @@
                     // Still attempt to load/render from localStorage for basic functionality
                     loadEmployees();
                     loadMonthlyObservations();
+                    loadCustomSiglas(); // Load custom siglas even if Firebase init fails for auth, might work for data
                     updateAdminUI(); // Ensure UI is updated for guest mode
                 }
             } else {
@@ -1612,8 +1816,9 @@
                 isAuthReady = true;
                 loadEmployees();
                 loadMonthlyObservations();
+                loadCustomSiglas(); // Load custom siglas from local storage
                 updateAdminUI(); // Ensure UI is updated for guest mode
-                window.showMessageBox('ConfiguraÃ§Ã£o do Firebase nÃ£o encontrada. Funcionalidades de autenticaÃ§Ã£o e persistÃªncia estÃ£o desativadas.', 7000);
+                window.showMessageBox('Configuração do Firebase não encontrada. Funcionalidades de autenticação e persistência estão desativadas.', 7000);
             }
 
             // Authentication button listeners
@@ -1661,6 +1866,9 @@
 
 
             document.getElementById('addEmployeeBtn').addEventListener('click', addEmployee);
+            document.getElementById('manageSiglasBtn').addEventListener('click', window.openManageSiglasModal); // New button listener
+            document.getElementById('addSiglaBtn').addEventListener('click', addCustomSigla); // New button listener
+
             document.getElementById('prevMonth').addEventListener('click', () => {
                 currentMonth--;
                 if (currentMonth < 0) {
