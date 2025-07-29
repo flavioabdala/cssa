@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -202,11 +202,11 @@
             }
             /* Adjust column widths for print if needed */
             .printable-table th:nth-child(1) { width: 12%; } /* Nome */
-            .printable-table th:nth-child(2) { width: 8%; } /* Função */
-            .printable-table th:nth-child(3) { width: 10%; } /* Conselho */
-            .printable-table th:nth-child(4) { width: 8%; } /* Horário de Trabalho */
+            .printable-table th:nth-child(2) { width: 7%; } /* Função */
+            .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
+            .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
             /* Calculate remaining width for days dynamically */
-            .printable-table th:nth-child(n+5) { width: calc(62% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
+            .printable-table th:nth-child(n+5) { width: calc(65% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
 
             .printable-footer {
                 position: fixed;
@@ -220,10 +220,45 @@
     </style>
 </head>
 <body class="p-4">
-    <div class="container">
+    <!-- Authentication Section -->
+    <div id="authSection" class="container text-center py-10">
+        <h2 id="authTitle" class="text-3xl font-bold mb-6 text-blue-700">Login</h2>
+        <div class="mb-4">
+            <input type="email" id="authEmail" placeholder="E-mail" class="input-field max-w-sm mx-auto mb-3">
+            <input type="password" id="authPassword" placeholder="Senha" class="input-field max-w-sm mx-auto mb-3">
+        </div>
+        <button id="loginBtn" class="btn-primary px-8 py-3 mr-2">Entrar</button>
+        <button id="registerBtn" class="btn-secondary px-8 py-3">Cadastrar</button>
+        <p id="authMessage" class="text-red-500 mt-4"></p>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="registrationModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-button" onclick="window.closeRegistrationModal()">&times;</button>
+            <h3 class="text-2xl font-bold mb-4 text-blue-700">Cadastro Completo</h3>
+            <div class="space-y-4">
+                <input type="text" id="regFullName" placeholder="Nome Completo" class="input-field">
+                <input type="text" id="regCPF" placeholder="CPF" class="input-field">
+                <input type="date" id="regDateOfBirth" placeholder="Data de Nascimento" class="input-field">
+                <input type="email" id="regEmail" placeholder="E-mail" class="input-field">
+                <input type="password" id="regPassword" placeholder="Senha" class="input-field">
+                <input type="password" id="regPasswordConfirm" placeholder="Confirmar Senha" class="input-field">
+            </div>
+            <button id="completeRegisterBtn" class="btn-primary w-full mt-6">Finalizar Cadastro</button>
+            <p id="regMessage" class="text-red-500 mt-4"></p>
+        </div>
+    </div>
+
+    <!-- Main Application Content -->
+    <div id="appContent" class="container hidden">
         <div class="header">
             <h1 class="text-3xl font-bold mb-2">Escala do Centro de Saúde</h1>
             <p class="text-lg">Gerencie a escala da sua equipe de forma fácil e eficiente.</p>
+            <div class="mt-4 flex justify-center items-center">
+                <span id="userStatus" class="text-sm font-medium mr-4"></span>
+                <button id="logoutBtn" class="btn-secondary px-4 py-2">Sair</button>
+            </div>
         </div>
 
         <!-- Month Navigation -->
@@ -233,8 +268,8 @@
             <button id="nextMonth" class="btn-secondary px-4 py-2 rounded-lg">Próximo Mês &gt;</button>
         </div>
 
-        <!-- Employee Management Section -->
-        <div class="bg-blue-50 p-6 rounded-lg shadow-md mb-8">
+        <!-- Employee Management Section (Admin Only) -->
+        <div id="employeeManagementSection" class="bg-blue-50 p-6 rounded-lg shadow-md mb-8 admin-only">
             <h3 class="text-xl font-semibold mb-4 text-blue-800">Gerenciamento de Funcionários</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <input type="text" id="employeeName" placeholder="Nome do Funcionário" class="input-field">
@@ -288,16 +323,17 @@
             </table>
         </div>
 
-        <!-- Observations Section -->
+        <!-- Observations Section (Admin Only for input, Visible for all) -->
         <div class="bg-blue-50 p-6 rounded-lg shadow-md mt-8">
             <h3 class="text-xl font-semibold mb-4 text-blue-800">Observações Mensais</h3>
-            <textarea id="monthlyObservations" class="input-field h-32 resize-y" placeholder="Adicione observações importantes para este mês..."></textarea>
+            <textarea id="monthlyObservations" class="input-field h-32 resize-y" placeholder="Adicione observações importantes para este mês..." readonly></textarea>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons (Admin Only for Save/Copy) -->
         <div class="flex justify-center mt-8 space-x-4">
             <button id="printScheduleBtn" class="btn-primary">Imprimir Escala</button>
-            <button id="saveScheduleBtn" class="btn-primary">Salvar Escala</button>
+            <button id="saveScheduleBtn" class="btn-primary admin-only">Salvar Escala</button>
+            <button id="copyToNextMonthBtn" class="btn-primary admin-only">Transcrever para o Mês Seguinte</button>
         </div>
     </div>
 
@@ -310,12 +346,12 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Sigla Section - General (for month) -->
-                <div id="siglaSectionMonth" class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                <div id="siglaSectionMonth" class="bg-gray-50 p-4 rounded-lg shadow-sm admin-only">
                     <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o Mês</h4>
                     <div class="mb-4 space-y-2" id="siglaCheckboxesMonth">
                         <!-- Sigla checkboxes will be generated here -->
                         <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="F" class="mr-2"> F (Farmácia)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="SOE" class="mr-2"> SOE (Sala de Observação)</label>
+                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="S" class="mr-2"> S (Sala de Observação)</label>
                         <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="P" class="mr-2"> P (Presente)</label>
                         <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="CT" class="mr-2"> CT (Curativo)</label>
                         <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="BR" class="mr-2"> BR (Acolhimento Baixo Risco)</label>
@@ -328,8 +364,8 @@
                     <button id="clearSiglasMonthBtn" class="btn-secondary w-full mt-2">Limpar Siglas do Mês</button>
                 </div>
 
-                <!-- Sigla Section - Specific Day (for FO/LM) -->
-                <div id="siglaSectionDay" class="bg-gray-50 p-4 rounded-lg shadow-sm hidden">
+                <!-- Sigla Section - Specific Day (for FO/LM) (Admin Only) -->
+                <div id="siglaSectionDay" class="bg-gray-50 p-4 rounded-lg shadow-sm hidden admin-only">
                     <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o Dia <span id="modalDayNumber"></span></h4>
                     <div class="mb-4 space-y-2" id="siglaCheckboxesDay">
                         <label class="flex items-center"><input type="checkbox" name="siglaDay" value="FO" class="mr-2"> FO (Folga)</label>
@@ -340,8 +376,8 @@
                     <button id="clearSiglasDayBtn" class="btn-secondary w-full mt-2">Limpar Siglas do Dia</button>
                 </div>
 
-                <!-- Vacation Section -->
-                <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                <!-- Vacation Section (Admin Only) -->
+                <div id="vacationSection" class="bg-gray-50 p-4 rounded-lg shadow-sm admin-only">
                     <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Férias</h4>
                     <div class="mb-4">
                         <label for="vacationStart" class="block text-sm font-medium text-gray-700 mb-1">Início das Férias:</label>
@@ -355,7 +391,7 @@
                     <button id="clearVacationBtn" class="btn-secondary w-full mt-2">Limpar Férias</button>
                 </div>
             </div>
-            <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6">Limpar Toda a Escala do Funcionário</button>
+            <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6 admin-only">Limpar Toda a Escala do Funcionário</button>
         </div>
     </div>
 
@@ -374,11 +410,12 @@
         let db;
         let auth;
         let userId;
+        let currentUserRole = 'guest'; // 'guest', 'user', 'admin'
         let isAuthReady = false;
 
-        // Firebase imports - these will be available if firebaseConfig is provided by the environment
+        // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
@@ -386,7 +423,7 @@
         let currentYear = new Date().getFullYear();
         let employees = [];
         let currentEditingEmployeeId = null;
-        let currentEditingDateKey = null; // New: Stores the date key if a specific day is being edited
+        let currentEditingDateKey = null; // Stores the date key if a specific day is being edited
         let monthlyObservations = {}; // Stores observations per month/year
 
         // Brazilian National Holidays (example for 2025)
@@ -421,19 +458,181 @@
             document.getElementById('messageBox').classList.add('hidden');
         }
 
+        /**
+         * Updates the visibility of admin-only elements based on the current user's role.
+         */
+        function updateAdminUI() {
+            const adminElements = document.querySelectorAll('.admin-only');
+            if (currentUserRole === 'admin') {
+                adminElements.forEach(el => el.classList.remove('hidden'));
+                document.getElementById('monthlyObservations').removeAttribute('readonly'); // Admin can edit observations
+            } else {
+                adminElements.forEach(el => el.classList.add('hidden'));
+                document.getElementById('monthlyObservations').setAttribute('readonly', true); // Non-admin cannot edit observations
+            }
+        }
+
+        /**
+         * Handles user authentication state changes.
+         * @param {firebase.User} user - The authenticated Firebase user object.
+         */
+        async function handleAuthStateChanged(user) {
+            const authSection = document.getElementById('authSection');
+            const appContent = document.getElementById('appContent');
+            const userStatus = document.getElementById('userStatus');
+
+            if (user) {
+                userId = user.uid;
+                userStatus.textContent = `Logado como: ${user.email} (ID: ${userId})`;
+                appContent.classList.remove('hidden');
+                authSection.classList.add('hidden');
+
+                // Fetch user role from Firestore
+                const userDocRef = doc(db, 'users', userId);
+                try {
+                    const userDocSnap = await getDoc(userDocRef);
+                    if (userDocSnap.exists()) {
+                        currentUserRole = userDocSnap.data().role || 'user'; // Default to 'user' if role not set
+                    } else {
+                        // If user document doesn't exist, create it with 'user' role
+                        // This happens on first login after registration
+                        // (This case is now less likely as registration modal handles initial user doc creation)
+                        await setDoc(userDocRef, { email: user.email, role: 'user', uid: userId });
+                        currentUserRole = 'user';
+                    }
+                    console.log("User role:", currentUserRole); // For debugging
+                } catch (error) {
+                    console.error("Erro ao carregar/criar documento do usuário:", error);
+                    currentUserRole = 'user'; // Fallback
+                    window.showMessageBox("Erro ao carregar perfil do usuário. Tente novamente.", 5000);
+                }
+            } else {
+                userId = null;
+                currentUserRole = 'guest';
+                userStatus.textContent = '';
+                appContent.classList.add('hidden');
+                authSection.classList.remove('hidden');
+            }
+            updateAdminUI(); // Update UI based on new role
+            isAuthReady = true;
+            loadEmployees(); // Load data after auth state is determined
+            loadMonthlyObservations();
+        }
+
+        // --- Authentication Functions ---
+
+        // Function to open the full registration modal
+        window.openRegistrationModal = function() {
+            document.getElementById('registrationModal').classList.remove('hidden');
+            // Clear previous messages and fields
+            document.getElementById('regMessage').textContent = '';
+            document.getElementById('regFullName').value = '';
+            document.getElementById('regCPF').value = '';
+            document.getElementById('regDateOfBirth').value = '';
+            document.getElementById('regEmail').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regPasswordConfirm').value = '';
+        }
+
+        // Function to close the full registration modal
+        window.closeRegistrationModal = function() {
+            document.getElementById('registrationModal').classList.add('hidden');
+        }
+
+        async function completeRegistration() {
+            const fullName = document.getElementById('regFullName').value.trim();
+            const cpf = document.getElementById('regCPF').value.trim();
+            const dateOfBirth = document.getElementById('regDateOfBirth').value;
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+            const regMessage = document.getElementById('regMessage');
+
+            if (!fullName || !cpf || !dateOfBirth || !email || !password || !passwordConfirm) {
+                regMessage.textContent = 'Por favor, preencha todos os campos.';
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                regMessage.textContent = 'As senhas não coincidem.';
+                return;
+            }
+
+            if (password.length < 6) {
+                regMessage.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                // Create user document in Firestore with detailed info and default 'user' role
+                await setDoc(doc(db, 'users', userCredential.user.uid), {
+                    uid: userCredential.user.uid,
+                    email: userCredential.user.email,
+                    fullName: fullName,
+                    cpf: cpf,
+                    dateOfBirth: dateOfBirth,
+                    role: 'user' // Default role
+                });
+                regMessage.textContent = 'Cadastro realizado com sucesso! Você pode fazer o login agora.';
+                window.showMessageBox('Cadastro realizado com sucesso! Faça o login.', 4000);
+                window.closeRegistrationModal();
+            } catch (error) {
+                console.error("Erro no cadastro completo:", error);
+                regMessage.textContent = `Erro no cadastro: ${error.message}`;
+            }
+        }
+
+
+        async function loginUser() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const authMessage = document.getElementById('authMessage');
+
+            if (!email || !password) {
+                authMessage.textContent = 'Por favor, preencha e-mail e senha.';
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                authMessage.textContent = ''; // Clear message on success
+            } catch (error) {
+                console.error("Erro no login:", error);
+                authMessage.textContent = `Erro no login: ${error.message}`;
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                await signOut(auth);
+                window.showMessageBox('Você foi desconectado.');
+            } catch (error) {
+                console.error("Erro ao fazer logout:", error);
+                window.showMessageBox(`Erro ao fazer logout: ${error.message}`);
+            }
+        }
+
+
         function saveEmployees() {
+            // Only allow admin to save employees
+            if (currentUserRole !== 'admin') {
+                console.warn("Apenas administradores podem salvar funcionários.");
+                return;
+            }
             if (userId && db) {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'employees');
+                const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'employees');
                 setDoc(docRef, { data: JSON.stringify(employees) })
                     .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
             } else {
+                // Fallback to localStorage if Firebase is not initialized (should not happen for saving if auth is required)
                 localStorage.setItem('healthScheduleEmployees', JSON.stringify(employees));
             }
         }
 
         async function loadEmployees() {
             if (userId && db) {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'employees');
+                const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'employees');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -446,6 +645,7 @@
                     employees = [];
                 }
             } else {
+                // If not authenticated or Firebase not ready, load from localStorage (for initial dev/fallback)
                 const storedEmployees = localStorage.getItem('healthScheduleEmployees');
                 employees = storedEmployees ? JSON.parse(storedEmployees) : [];
             }
@@ -454,10 +654,15 @@
         }
 
         function saveMonthlyObservations() {
+            // Only allow admin to save observations
+            if (currentUserRole !== 'admin') {
+                console.warn("Apenas administradores podem salvar observações.");
+                return;
+            }
             const key = `${currentYear}-${currentMonth + 1}`;
             monthlyObservations[key] = document.getElementById('monthlyObservations').value;
             if (userId && db) {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'observations');
+                const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'observations');
                 setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
                     .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
             } else {
@@ -467,7 +672,7 @@
 
         async function loadMonthlyObservations() {
             if (userId && db) {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'observations');
+                const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'observations');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -489,6 +694,10 @@
 
         // New function to save both employees and observations
         function saveAllData() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem salvar a escala.', 3000);
+                return;
+            }
             saveEmployees();
             saveMonthlyObservations();
             window.showMessageBox('Escala salva com sucesso!');
@@ -588,11 +797,12 @@
                         <span class="text-xs text-gray-400 block break-all">ID: ${emp.id}</span>
                     </div>
                     <div>
-                        <button onclick="window.deleteEmployee('${emp.id}')" class="btn-danger ml-2">Excluir</button>
+                        <button onclick="window.deleteEmployee('${emp.id}')" class="btn-danger ml-2 admin-only">Excluir</button>
                     </div>
                 `;
                 employeesUl.appendChild(li);
             });
+            updateAdminUI(); // Update UI after rendering list
         }
 
         function renderSchedule() {
@@ -640,7 +850,13 @@
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                     td.setAttribute('data-employee-id', emp.id); // Add data attribute for employee ID
                     td.setAttribute('data-date-key', dateKey); // Add data attribute for date key
-                    td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
+                    
+                    // Only allow click on day cells if user is admin
+                    if (currentUserRole === 'admin') {
+                        td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
+                    } else {
+                        td.style.cursor = 'default'; // Change cursor for non-admin
+                    }
 
                     if (isVacation(emp, currentYear, currentMonth, i)) {
                         td.classList.add('vacation');
@@ -677,11 +893,16 @@
                 scheduleBody.appendChild(tr);
             });
             loadMonthlyObservations(); // Load observations for the rendered month
+            updateAdminUI(); // Update UI after rendering schedule
         }
 
         // --- Employee Actions ---
 
         function addEmployee() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem adicionar funcionários.', 3000);
+                return;
+            }
             const name = document.getElementById('employeeName').value.trim();
             let role = document.getElementById('employeeRole').value.trim();
             const customRole = document.getElementById('customEmployeeRole').value.trim();
@@ -722,7 +943,11 @@
         }
 
         window.deleteEmployee = function(id) {
-            if (confirm('Tem certeza que deseja excluir este funcionário?')) {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem excluir funcionários.', 3000);
+                return;
+            }
+            if (window.confirm('Tem certeza que deseja excluir este funcionário?')) {
                 employees = employees.filter(emp => emp.id !== id);
                 saveEmployees();
                 renderEmployeeList();
@@ -748,6 +973,20 @@
                 const siglaSectionDay = document.getElementById('siglaSectionDay');
                 const modalDayNumber = document.getElementById('modalDayNumber');
 
+                // Hide/show sections based on admin role
+                if (currentUserRole !== 'admin') {
+                    siglaSectionMonth.classList.add('hidden');
+                    siglaSectionDay.classList.add('hidden');
+                    document.getElementById('vacationSection').classList.add('hidden'); // Hide vacation section for non-admin
+                    document.getElementById('clearEmployeeScheduleBtn').classList.add('hidden'); // Hide clear all button for non-admin
+                    window.showMessageBox('Você não tem permissão para editar a escala.', 3000);
+                    return; // Prevent modal from opening for non-admin if they click on an editable area
+                } else {
+                    document.getElementById('vacationSection').classList.remove('hidden');
+                    document.getElementById('clearEmployeeScheduleBtn').classList.remove('hidden');
+                }
+
+
                 if (currentEditingDateKey) {
                     // Editing a specific day
                     siglaSectionMonth.classList.add('hidden');
@@ -755,7 +994,7 @@
                     modalDayNumber.textContent = currentEditingDateKey.split('-')[2]; // Extract day number
 
                     // Pre-check siglas for the specific day
-                    const checkboxesDay = document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]');
+                    const checkboxesDay = document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox']');
                     checkboxesDay.forEach(cb => cb.checked = false); // Uncheck all first
 
                     const siglasForDay = employee.schedule && employee.schedule[currentEditingDateKey] ? employee.schedule[currentEditingDateKey] : [];
@@ -780,7 +1019,7 @@
                     siglaSectionDay.classList.add('hidden');
 
                     // Clear and pre-check siglas based on current month's schedule for this employee
-                    const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]');
+                    const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox']');
                     checkboxesMonth.forEach(cb => cb.checked = false); // Uncheck all first
 
                     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -815,6 +1054,10 @@
         }
 
         function applySiglaMonth() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem aplicar siglas.', 3000);
+                return;
+            }
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
 
             if (selectedSiglas.length === 0) {
@@ -844,7 +1087,11 @@
         }
 
         function clearSiglasForMonth() {
-            if (confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionário para o mês atual?')) {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem limpar siglas.', 3000);
+                return;
+            }
+            if (window.confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionário para o mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
 
@@ -854,7 +1101,14 @@
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                     if (employee.schedule && employee.schedule[dateKey]) {
-                        delete employee.schedule[dateKey];
+                        // Only clear non-FO/LM siglas
+                        const existingSiglas = employee.schedule[dateKey] || [];
+                        const preservedSiglas = Array.isArray(existingSiglas) ? existingSiglas.filter(s => s === 'FO' || s === 'LM') : [];
+                        if (preservedSiglas.length > 0) {
+                            employee.schedule[dateKey] = preservedSiglas;
+                        } else {
+                            delete employee.schedule[dateKey];
+                        }
                     }
                 }
                 saveEmployees();
@@ -865,6 +1119,10 @@
         }
 
         function applySiglaDay() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem aplicar siglas.', 3000);
+                return;
+            }
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]:checked')).map(cb => cb.value);
 
             if (selectedSiglas.length === 0) {
@@ -881,8 +1139,7 @@
 
             const employee = employees[employeeIndex];
 
-            // For single day, we can overwrite or combine if desired. For FO/LM, usually overwrite.
-            // Let's assume for single day, we replace existing siglas with selected ones.
+            // For single day, we replace existing siglas with selected ones.
             employee.schedule[currentEditingDateKey] = selectedSiglas;
 
             saveEmployees();
@@ -892,11 +1149,15 @@
         }
 
         function clearSiglasForDay() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem limpar siglas.', 3000);
+                return;
+            }
              if (!currentEditingDateKey) {
                 window.showMessageBox('Erro: Dia não selecionado para limpar sigla.', 3000);
                 return;
             }
-            if (confirm(`Tem certeza que deseja limpar as siglas para o dia ${currentEditingDateKey.split('-')[2]}?`)) {
+            if (window.confirm(`Tem certeza que deseja limpar as siglas para o dia ${currentEditingDateKey.split('-')[2]}?`)) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
 
@@ -913,6 +1174,10 @@
 
 
         function applyVacation() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem aplicar férias.', 3000);
+                return;
+            }
             const vacationStart = document.getElementById('vacationStart').value;
             const vacationEnd = document.getElementById('vacationEnd').value;
 
@@ -952,6 +1217,10 @@
         }
 
         function clearVacation() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem limpar férias.', 3000);
+                return;
+            }
             const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
             if (employeeIndex === -1) return;
 
@@ -965,7 +1234,11 @@
         }
 
         function clearEmployeeSchedule() {
-            if (confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário? Isso é irreversível.')) {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem limpar a escala do funcionário.', 3000);
+                return;
+            }
+            if (window.confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário? Isso é irreversível.')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
 
@@ -979,6 +1252,70 @@
                 window.closeSiglaVacationModal();
             }
         }
+
+        // New function to copy current month's schedule to the next month
+        function copyScheduleToNextMonth() {
+            if (currentUserRole !== 'admin') {
+                window.showMessageBox('Apenas administradores podem transcrever a escala.', 3000);
+                return;
+            }
+            if (!window.confirm('Deseja transcrever a escala do mês atual para o próximo mês? Isso copiará as siglas de dias úteis, mas não as folgas/licenças médicas específicas.')) {
+                return;
+            }
+
+            const nextMonthDate = new Date(currentYear, currentMonth + 1);
+            const nextMonth = nextMonthDate.getMonth();
+            const nextYear = nextMonthDate.getFullYear();
+            const daysInCurrentMonth = getDaysInMonth(currentYear, currentMonth);
+            const daysInNextMonth = getDaysInMonth(nextYear, nextMonth);
+
+            employees.forEach(emp => {
+                for (let i = 1; i <= daysInCurrentMonth; i++) {
+                    const currentDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    const nextDay = i; // Map day 1 to day 1, day 2 to day 2, etc.
+                    const nextDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(nextDay).padStart(2, '0')}`;
+
+                    // Skip if the day number exceeds the number of days in the next month (e.g., 31st to a 30-day month)
+                    if (nextDay > daysInNextMonth) {
+                        continue;
+                    }
+
+                    // Get siglas from current month, filtering out FO/LM for general copy
+                    const sourceSiglas = emp.schedule[currentDateKey] || [];
+                    const generalSiglasToCopy = Array.isArray(sourceSiglas) ? sourceSiglas.filter(s => s !== 'FO' && s !== 'LM') : [];
+
+                    // Preserve existing FO/LM in the target day
+                    const existingFoLm = emp.schedule[nextDateKey] || [];
+                    const preservedFoLm = Array.isArray(existingFoLm) ? existingFoLm.filter(s => s === 'FO' || s === 'LM') : [];
+
+                    // Determine the content for the next month's day
+                    let targetDayContent = [];
+                    if (isWeekend(nextYear, nextMonth, nextDay) || isHoliday(nextYear, nextMonth, nextDay) || isVacation(emp, nextYear, nextMonth, nextDay)) {
+                        // If it's a non-working day in the target month, only keep preserved FO/LM
+                        targetDayContent = preservedFoLm;
+                    } else {
+                        // It's a working day, combine preserved FO/LM with general siglas from current month
+                        targetDayContent = [...new Set([...preservedFoLm, ...generalSiglasToCopy])];
+                    }
+
+                    // Assign the determined content
+                    if (targetDayContent.length > 0) {
+                        emp.schedule[nextDateKey] = targetDayContent;
+                    } else {
+                        delete emp.schedule[nextDateKey];
+                    }
+                }
+            });
+
+            saveEmployees();
+            // Optionally, navigate to the next month to show the copied schedule
+            currentMonth = nextMonth;
+            currentYear = nextYear;
+            renderSchedule();
+            loadMonthlyObservations(); // Ensure observations are loaded for the new month
+            window.showMessageBox('Escala transcrita para o mês seguinte com sucesso!');
+        }
+
 
         // --- Print Functionality ---
 
@@ -1025,10 +1362,10 @@
 
                         /* Column widths for print */
                         .printable-table th:nth-child(1) { width: 12%; } /* Nome */
-                        .printable-table th:nth-child(2) { width: 8%; } /* Função */
-                        .printable-table th:nth-child(3) { width: 10%; } /* Conselho */
-                        .printable-table th:nth-child(4) { width: 8%; } /* Horário de Trabalho */
-                        .printable-table th:nth-child(n+5) { width: calc(62% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
+                        .printable-table th:nth-child(2) { width: 7%; } /* Função */
+                        .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
+                        .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
+                        .printable-table th:nth-child(n+5) { width: calc(65% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
 
                         @page {
                             size: landscape; /* Default to landscape */
@@ -1110,7 +1447,7 @@
                             <h3>Legenda:</h3>
                             <ul>
                                 <li><strong>F:</strong> Farmácia</li>
-                                <li><strong>SOE:</strong> Sala de Observação</li>
+                                <li><strong>S:</strong> Sala de Observação</li>
                                 <li><strong>P:</strong> Presente</li>
                                 <li><strong>CT:</strong> Curativo</li>
                                 <li><strong>BR:</strong> Acolhimento Baixo Risco</li>
@@ -1141,47 +1478,35 @@
                     db = getFirestore(app);
                     auth = getAuth(app);
 
-                    onAuthStateChanged(auth, async (user) => {
-                        if (user) {
-                            userId = user.uid;
-                        } else {
-                            // Sign in anonymously if no user is logged in
-                            try {
-                                if (initialAuthToken) {
-                                    await signInWithCustomToken(auth, initialAuthToken);
-                                    userId = auth.currentUser.uid;
-                                } else {
-                                    const anonUser = await signInAnonymously(auth);
-                                    userId = anonUser.user.uid;
-                                }
-                            } catch (error) {
-                                console.error("Erro ao autenticar no Firebase:", error);
-                                window.showMessageBox(`Erro de autenticação: ${error.message}`, 5000);
-                                // Fallback to a random UUID if anonymous sign-in fails
-                                userId = crypto.randomUUID();
-                            }
-                        }
-                        isAuthReady = true;
-                        // Load data only after auth is ready and userId is set
-                        loadEmployees();
-                        loadMonthlyObservations();
-                    });
+                    // Listen for authentication state changes
+                    onAuthStateChanged(auth, handleAuthStateChanged);
+
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase:", error);
                     window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Usando armazenamento local.`, 7000);
                     // Fallback to localStorage if Firebase initialization fails
-                    userId = crypto.randomUUID();
+                    userId = crypto.randomUUID(); // Dummy userId for localStorage context
+                    currentUserRole = 'guest';
                     isAuthReady = true;
                     loadEmployees();
                     loadMonthlyObservations();
+                    updateAdminUI(); // Ensure UI is updated for guest mode
                 }
             } else {
                 // If no Firebase config, proceed with localStorage
                 userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
+                currentUserRole = 'guest';
                 isAuthReady = true;
                 loadEmployees();
                 loadMonthlyObservations();
+                updateAdminUI(); // Ensure UI is updated for guest mode
             }
+
+            // Authentication button listeners
+            document.getElementById('loginBtn').addEventListener('click', loginUser);
+            document.getElementById('registerBtn').addEventListener('click', window.openRegistrationModal); // Open registration modal
+            document.getElementById('completeRegisterBtn').addEventListener('click', completeRegistration); // Handle complete registration
+            document.getElementById('logoutBtn').addEventListener('click', logoutUser);
 
             // Event listener for custom role field
             document.getElementById('employeeRole').addEventListener('change', function() {
@@ -1226,9 +1551,10 @@
             document.getElementById('clearEmployeeScheduleBtn').addEventListener('click', clearEmployeeSchedule);
             document.getElementById('printScheduleBtn').addEventListener('click', printSchedule);
             document.getElementById('saveScheduleBtn').addEventListener('click', saveAllData); // Event listener for the new save button
+            document.getElementById('copyToNextMonthBtn').addEventListener('click', copyScheduleToNextMonth); // New event listener for copy button
             document.getElementById('monthlyObservations').addEventListener('input', saveMonthlyObservations);
 
-            // Initial render
+            // Initial render (will be triggered by onAuthStateChanged)
             renderCurrentMonthYear();
         });
     </script>
