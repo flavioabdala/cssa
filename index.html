@@ -399,7 +399,8 @@
     <div id="messageBox" class="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg hidden z-2000">
         <p id="messageText"></p>
         <button class="ml-4 text-white font-bold" onclick="window.hideMessageBox()">&times;</button>
-    </div
+    </div>
+
     <script type="module">
         // Global variables for Firebase configuration and app ID
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -1582,18 +1583,6 @@
                     db = getFirestore(app);
                     auth = getAuth(app);
                     console.log("Firebase app, db, auth initialized successfully.");
-
-                    // Establish initial authentication state
-                    // This will trigger onAuthStateChanged, which then loads data
-                    if (initialAuthToken) {
-                        console.log("Attempting signInWithCustomToken...");
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("signInWithCustomToken successful (or already signed in).");
-                    } else {
-                        console.log("No custom token, attempting signInAnonymously...");
-                        await signInAnonymously(auth);
-                        console.log("signInAnonymously successful (or already signed in).");
-                    }
 
                     // Listen for authentication state changes (this will also handle the initial state established above)
                     onAuthStateChanged(auth, handleAuthStateChanged);
