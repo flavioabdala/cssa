@@ -205,8 +205,8 @@
             .printable-table th:nth-child(2) { width: 7%; } /* Função */
             .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
             .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
-            /* Calculate remaining width for days dynamically */
-            .printable-table th:nth-child(n+5) { width: calc(65% / var(--days-in-month)); } /* Days */
+            /* Calculate remaining width for days dynamically using CSS variable */
+            .printable-table th:nth-child(n+5) { width: calc(65% / var(--days-in-month)); }
 
             .printable-footer {
                 position: fixed;
@@ -273,7 +273,7 @@
             <h3 class="text-xl font-semibold mb-4 text-blue-800">Gerenciamento de Funcionários</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <input type="text" id="employeeName" placeholder="Nome do Funcionário" class="input-field">
-                <select id="employeeRole" class="input-field">
+                <select type="text" id="employeeRole" class="input-field">
                     <option value="">Selecione a Função</option>
                     <option value="Técnico">Técnico</option>
                     <option value="Enfermeiro">Enfermeiro</option>
@@ -285,7 +285,7 @@
             </div>
             <div class="mb-4">
                 <label for="employeeTeam" class="block text-sm font-medium text-gray-700 mb-1">Equipe:</label>
-                <select id="employeeTeam" class="input-field">
+                <select type="text" id="employeeTeam" class="input-field">
                     <option value="">Selecione a Equipe</option>
                     <option value="Sol">Sol</option>
                     <option value="Verde">Verde</option>
@@ -477,6 +477,7 @@
          * @param {firebase.User} user - The authenticated Firebase user object.
          */
         async function handleAuthStateChanged(user) {
+            console.log("handleAuthStateChanged called with user:", user ? user.uid : "null");
             const authSection = document.getElementById('authSection');
             const appContent = document.getElementById('appContent');
             const userStatus = document.getElementById('userStatus');
@@ -493,20 +494,22 @@
                     const userDocSnap = await getDoc(userDocRef);
                     if (userDocSnap.exists()) {
                         currentUserRole = userDocSnap.data().role || 'user'; // Default to 'user' if role not set
+                        console.log("User role fetched from Firestore:", currentUserRole);
                     } else {
                         // If user document doesn't exist, create it with 'user' role
                         // This happens on first login after registration
                         // (This case is now less likely as registration modal handles initial user doc creation)
+                        console.log("User document not found, creating with default 'user' role.");
                         await setDoc(userDocRef, { email: user.email, role: 'user', uid: userId });
                         currentUserRole = 'user';
                     }
-                    console.log("User role:", currentUserRole); // For debugging
                 } catch (error) {
                     console.error("Erro ao carregar/criar documento do usuário:", error);
                     currentUserRole = 'user'; // Fallback
                     window.showMessageBox("Erro ao carregar perfil do usuário. Tente novamente.", 5000);
                 }
             } else {
+                console.log("User is null, setting to guest mode.");
                 userId = null;
                 currentUserRole = 'guest';
                 userStatus.textContent = '';
@@ -523,6 +526,7 @@
 
         // Function to open the full registration modal
         window.openRegistrationModal = function() {
+            console.log("Opening registration modal...");
             document.getElementById('registrationModal').classList.remove('hidden');
             // Clear previous messages and fields
             document.getElementById('regMessage').textContent = '';
@@ -536,10 +540,12 @@
 
         // Function to close the full registration modal
         window.closeRegistrationModal = function() {
+            console.log("Closing registration modal...");
             document.getElementById('registrationModal').classList.add('hidden');
         }
 
         async function completeRegistration() {
+            console.log("Attempting complete registration...");
             const fullName = document.getElementById('regFullName').value.trim();
             const cpf = document.getElementById('regCPF').value.trim();
             const dateOfBirth = document.getElementById('regDateOfBirth').value;
@@ -550,21 +556,27 @@
 
             if (!fullName || !cpf || !dateOfBirth || !email || !password || !passwordConfirm) {
                 regMessage.textContent = 'Por favor, preencha todos os campos.';
+                console.log("Registration failed: Missing fields.");
                 return;
             }
 
             if (password !== passwordConfirm) {
                 regMessage.textContent = 'As senhas não coincidem.';
+                console.log("Registration failed: Passwords do not match.");
                 return;
             }
 
             if (password.length < 6) {
                 regMessage.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+                console.log("Registration failed: Password too short.");
                 return;
             }
 
             try {
+                console.log(`Creating user with email: ${email}`);
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                console.log("User created in Firebase Auth:", userCredential.user.uid);
+
                 // Create user document in Firestore with detailed info and default 'user' role
                 await setDoc(doc(db, 'users', userCredential.user.uid), {
                     uid: userCredential.user.uid,
@@ -574,6 +586,7 @@
                     dateOfBirth: dateOfBirth,
                     role: 'user' // Default role
                 });
+                console.log("User profile saved to Firestore.");
                 regMessage.textContent = 'Cadastro realizado com sucesso! Você pode fazer o login agora.';
                 window.showMessageBox('Cadastro realizado com sucesso! Faça o login.', 4000);
                 window.closeRegistrationModal();
@@ -585,17 +598,21 @@
 
 
         async function loginUser() {
+            console.log("Attempting login...");
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
             const authMessage = document.getElementById('authMessage');
 
             if (!email || !password) {
                 authMessage.textContent = 'Por favor, preencha e-mail e senha.';
+                console.log("Login failed: Missing email or password.");
                 return;
             }
 
             try {
+                console.log(`Signing in with email: ${email}`);
                 await signInWithEmailAndPassword(auth, email, password);
+                console.log("Login successful.");
                 authMessage.textContent = ''; // Clear message on success
             } catch (error) {
                 console.error("Erro no login:", error);
@@ -604,8 +621,10 @@
         }
 
         async function logoutUser() {
+            console.log("Attempting logout...");
             try {
                 await signOut(auth);
+                console.log("Logout successful.");
                 window.showMessageBox('Você foi desconectado.');
             } catch (error) {
                 console.error("Erro ao fazer logout:", error);
@@ -631,20 +650,24 @@
         }
 
         async function loadEmployees() {
+            console.log("Loading employees...");
             if (userId && db) {
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'employees');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
                         employees = JSON.parse(docSnap.data().data);
+                        console.log("Employees loaded from Firestore.");
                     } else {
                         employees = [];
+                        console.log("No employees document found in Firestore.");
                     }
                 } catch (error) {
                     console.error("Erro ao carregar funcionários do Firestore:", error);
                     employees = [];
                 }
             } else {
+                console.log("Firebase not ready or user not authenticated, loading employees from localStorage.");
                 // If not authenticated or Firebase not ready, load from localStorage (for initial dev/fallback)
                 const storedEmployees = localStorage.getItem('healthScheduleEmployees');
                 employees = storedEmployees ? JSON.parse(storedEmployees) : [];
@@ -671,20 +694,24 @@
         }
 
         async function loadMonthlyObservations() {
+            console.log("Loading monthly observations...");
             if (userId && db) {
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule`, 'observations');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
                         monthlyObservations = JSON.parse(docSnap.data().data);
+                        console.log("Monthly observations loaded from Firestore.");
                     } else {
                         monthlyObservations = {};
+                        console.log("No monthly observations document found in Firestore.");
                     }
                 } catch (error) {
                     console.error("Erro ao carregar observações do Firestore:", error);
                     monthlyObservations = {};
                 }
             } else {
+                console.log("Firebase not ready or user not authenticated, loading monthly observations from localStorage.");
                 const storedObservations = localStorage.getItem('healthScheduleObservations');
                 monthlyObservations = storedObservations ? JSON.parse(storedObservations) : {};
             }
@@ -698,6 +725,7 @@
                 window.showMessageBox('Apenas administradores podem salvar a escala.', 3000);
                 return;
             }
+            console.log("Saving all data (employees and observations)...");
             saveEmployees();
             saveMonthlyObservations();
             window.showMessageBox('Escala salva com sucesso!');
@@ -776,6 +804,7 @@
         }
 
         function renderEmployeeList() {
+            console.log("Rendering employee list...");
             const employeesUl = document.getElementById('employeesUl');
             employeesUl.innerHTML = '';
             if (employees.length === 0) {
@@ -806,6 +835,7 @@
         }
 
         function renderSchedule() {
+            console.log("Rendering schedule...");
             renderCurrentMonthYear();
             const scheduleHeader = document.getElementById('scheduleHeader');
             const scheduleBody = document.getElementById('scheduleBody');
@@ -903,6 +933,7 @@
                 window.showMessageBox('Apenas administradores podem adicionar funcionários.', 3000);
                 return;
             }
+            console.log("Attempting to add employee...");
             const name = document.getElementById('employeeName').value.trim();
             let role = document.getElementById('employeeRole').value.trim();
             const customRole = document.getElementById('customEmployeeRole').value.trim();
@@ -937,8 +968,10 @@
                 document.getElementById('employeeWorkShift').value = '';
                 document.getElementById('employeeTeam').value = '';
                 window.showMessageBox('Funcionário adicionado com sucesso!');
+                console.log("Employee added:", newEmployee);
             } else {
                 window.showMessageBox('Por favor, preencha todos os campos do funcionário.', 4000);
+                console.log("Failed to add employee: Missing fields.");
             }
         }
 
@@ -947,18 +980,21 @@
                 window.showMessageBox('Apenas administradores podem excluir funcionários.', 3000);
                 return;
             }
+            console.log("Attempting to delete employee:", id);
             if (window.confirm('Tem certeza que deseja excluir este funcionário?')) {
                 employees = employees.filter(emp => emp.id !== id);
                 saveEmployees();
                 renderEmployeeList();
                 renderSchedule();
                 window.showMessageBox('Funcionário excluído.');
+                console.log("Employee deleted.");
             }
         }
 
         // --- Modal Functions ---
 
         window.openSiglaVacationModal = function(employeeId, dateKey = null) {
+            console.log(`Opening Sigla/Vacation modal for employee: ${employeeId}, date: ${dateKey}`);
             currentEditingEmployeeId = employeeId;
             currentEditingDateKey = dateKey; // Store the dateKey
             const employee = employees.find(emp => emp.id === employeeId);
@@ -980,8 +1016,10 @@
                     document.getElementById('vacationSection').classList.add('hidden'); // Hide vacation section for non-admin
                     document.getElementById('clearEmployeeScheduleBtn').classList.add('hidden'); // Hide clear all button for non-admin
                     window.showMessageBox('Você não tem permissão para editar a escala.', 3000);
+                    console.log("Non-admin attempting to open edit modal, denied.");
                     return; // Prevent modal from opening for non-admin if they click on an editable area
                 } else {
+                    siglaSectionMonth.classList.remove('hidden'); // Ensure it's visible for admin
                     document.getElementById('vacationSection').classList.remove('hidden');
                     document.getElementById('clearEmployeeScheduleBtn').classList.remove('hidden');
                 }
@@ -992,9 +1030,10 @@
                     siglaSectionMonth.classList.add('hidden');
                     siglaSectionDay.classList.remove('hidden');
                     modalDayNumber.textContent = currentEditingDateKey.split('-')[2]; // Extract day number
+                    console.log("Editing specific day:", currentEditingDateKey);
 
                     // Pre-check siglas for the specific day
-                    const checkboxesDay = document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox']');
+                    const checkboxesDay = document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]');
                     checkboxesDay.forEach(cb => cb.checked = false); // Uncheck all first
 
                     const siglasForDay = employee.schedule && employee.schedule[currentEditingDateKey] ? employee.schedule[currentEditingDateKey] : [];
@@ -1017,9 +1056,10 @@
                     // Editing general monthly schedule (from employee name click)
                     siglaSectionMonth.classList.remove('hidden');
                     siglaSectionDay.classList.add('hidden');
+                    console.log("Editing general monthly schedule.");
 
                     // Clear and pre-check siglas based on current month's schedule for this employee
-                    const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox']');
+                    const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]');
                     checkboxesMonth.forEach(cb => cb.checked = false); // Uncheck all first
 
                     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -1048,6 +1088,7 @@
         }
 
         window.closeSiglaVacationModal = function() {
+            console.log("Closing Sigla/Vacation modal.");
             document.getElementById('siglaVacationModal').classList.add('hidden');
             currentEditingEmployeeId = null;
             currentEditingDateKey = null; // Clear the dateKey
@@ -1058,6 +1099,7 @@
                 window.showMessageBox('Apenas administradores podem aplicar siglas.', 3000);
                 return;
             }
+            console.log("Applying monthly siglas...");
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
 
             if (selectedSiglas.length === 0) {
@@ -1084,6 +1126,7 @@
             renderSchedule();
             window.showMessageBox('Sigla(s) aplicada(s) para os dias úteis do mês.');
             window.closeSiglaVacationModal();
+            console.log("Monthly siglas applied.");
         }
 
         function clearSiglasForMonth() {
@@ -1091,6 +1134,7 @@
                 window.showMessageBox('Apenas administradores podem limpar siglas.', 3000);
                 return;
             }
+            console.log("Clearing monthly siglas...");
             if (window.confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionário para o mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1115,6 +1159,7 @@
                 renderSchedule();
                 window.showMessageBox('Siglas do funcionário para o mês atual limpas.');
                 window.closeSiglaVacationModal();
+                console.log("Monthly siglas cleared.");
             }
         }
 
@@ -1123,6 +1168,7 @@
                 window.showMessageBox('Apenas administradores podem aplicar siglas.', 3000);
                 return;
             }
+            console.log("Applying daily siglas...");
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]:checked')).map(cb => cb.value);
 
             if (selectedSiglas.length === 0) {
@@ -1146,6 +1192,7 @@
             renderSchedule();
             window.showMessageBox(`Sigla(s) aplicada(s) para o dia ${currentEditingDateKey.split('-')[2]}.`);
             window.closeSiglaVacationModal();
+            console.log("Daily siglas applied.");
         }
 
         function clearSiglasForDay() {
@@ -1153,6 +1200,7 @@
                 window.showMessageBox('Apenas administradores podem limpar siglas.', 3000);
                 return;
             }
+            console.log("Clearing daily siglas...");
              if (!currentEditingDateKey) {
                 window.showMessageBox('Erro: Dia não selecionado para limpar sigla.', 3000);
                 return;
@@ -1169,6 +1217,7 @@
                 renderSchedule();
                 window.showMessageBox(`Siglas para o dia ${currentEditingDateKey.split('-')[2]} limpas.`);
                 window.closeSiglaVacationModal();
+                console.log("Daily siglas cleared.");
             }
         }
 
@@ -1178,6 +1227,7 @@
                 window.showMessageBox('Apenas administradores podem aplicar férias.', 3000);
                 return;
             }
+            console.log("Applying vacation...");
             const vacationStart = document.getElementById('vacationStart').value;
             const vacationEnd = document.getElementById('vacationEnd').value;
 
@@ -1214,6 +1264,7 @@
             renderSchedule();
             window.showMessageBox('Férias aplicadas com sucesso!');
             window.closeSiglaVacationModal();
+            console.log("Vacation applied.");
         }
 
         function clearVacation() {
@@ -1221,6 +1272,7 @@
                 window.showMessageBox('Apenas administradores podem limpar férias.', 3000);
                 return;
             }
+            console.log("Clearing vacation...");
             const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
             if (employeeIndex === -1) return;
 
@@ -1231,6 +1283,7 @@
             renderSchedule();
             window.showMessageBox('Férias do funcionário limpas.');
             window.closeSiglaVacationModal();
+            console.log("Vacation cleared.");
         }
 
         function clearEmployeeSchedule() {
@@ -1238,6 +1291,7 @@
                 window.showMessageBox('Apenas administradores podem limpar a escala do funcionário.', 3000);
                 return;
             }
+            console.log("Clearing all employee schedule and vacations...");
             if (window.confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário? Isso é irreversível.')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1250,6 +1304,7 @@
                 renderSchedule();
                 window.showMessageBox('Escala e férias do funcionário limpas.');
                 window.closeSiglaVacationModal();
+                console.log("Employee schedule and vacations cleared.");
             }
         }
 
@@ -1259,6 +1314,7 @@
                 window.showMessageBox('Apenas administradores podem transcrever a escala.', 3000);
                 return;
             }
+            console.log("Copying schedule to next month...");
             if (!window.confirm('Deseja transcrever a escala do mês atual para o próximo mês? Isso copiará as siglas de dias úteis, mas não as folgas/licenças médicas específicas.')) {
                 return;
             }
@@ -1314,14 +1370,21 @@
             renderSchedule();
             loadMonthlyObservations(); // Ensure observations are loaded for the new month
             window.showMessageBox('Escala transcrita para o mês seguinte com sucesso!');
+            console.log("Schedule copied to next month.");
         }
 
 
         // --- Print Functionality ---
 
         function printSchedule() {
+            console.log("Preparing to print schedule...");
             const daysInCurrentMonthForPrint = getDaysInMonth(currentYear, currentMonth); // Pre-calculate
             const printWindow = window.open('', '_blank');
+
+            // Set CSS custom property on the document element of the new window
+            // This is the key change to avoid SyntaxError in the <style> block
+            printWindow.document.documentElement.style.setProperty('--days-in-month', daysInCurrentMonthForPrint);
+
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html lang="pt-BR">
@@ -1366,7 +1429,7 @@
                         .printable-table th:nth-child(2) { width: 7%; } /* Função */
                         .printable-table th:nth-child(3) { width: 9%; } /* Conselho */
                         .printable-table th:nth-child(4) { width: 7%; } /* Horário de Trabalho */
-                        .printable-table th:nth-child(n+5) { width: calc(65% / ${daysInCurrentMonthForPrint}); } /* Days */
+                        .printable-table th:nth-child(n+5) { width: calc(65% / var(--days-in-month)); } /* Days */
 
                         @page {
                             size: landscape; /* Default to landscape */
@@ -1468,24 +1531,42 @@
             printWindow.document.close();
             printWindow.focus();
             printWindow.print();
+            console.log("Print window opened and content written.");
         }
 
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOMContentLoaded fired.");
+            console.log("Firebase Config:", firebaseConfig);
+            console.log("Initial Auth Token:", initialAuthToken);
+
             // Initialize Firebase
             if (firebaseConfig) {
                 try {
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
+                    console.log("Firebase app, db, auth initialized.");
 
-                    // Listen for authentication state changes
+                    // Establish initial authentication state
+                    if (initialAuthToken) {
+                        console.log("Attempting signInWithCustomToken...");
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("signInWithCustomToken successful (or already signed in).");
+                    } else {
+                        console.log("No custom token, attempting signInAnonymously...");
+                        await signInAnonymously(auth);
+                        console.log("signInAnonymously successful (or already signed in).");
+                    }
+
+                    // Listen for authentication state changes (this will also handle the initial state established above)
                     onAuthStateChanged(auth, handleAuthStateChanged);
+                    console.log("onAuthStateChanged listener attached.");
 
                 } catch (error) {
-                    console.error("Erro ao inicializar Firebase:", error);
+                    console.error("Erro ao inicializar Firebase ou autenticar:", error);
                     window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Usando armazenamento local.`, 7000);
-                    // Fallback to localStorage if Firebase initialization fails
+                    // Fallback to localStorage if Firebase initialization or initial auth fails
                     userId = crypto.randomUUID(); // Dummy userId for localStorage context
                     currentUserRole = 'guest';
                     isAuthReady = true;
@@ -1494,6 +1575,7 @@
                     updateAdminUI(); // Ensure UI is updated for guest mode
                 }
             } else {
+                console.warn("Firebase config not found. Falling back to localStorage.");
                 // If no Firebase config, proceed with localStorage
                 userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
                 currentUserRole = 'guest';
@@ -1504,10 +1586,35 @@
             }
 
             // Authentication button listeners
-            document.getElementById('loginBtn').addEventListener('click', loginUser);
-            document.getElementById('registerBtn').addEventListener('click', window.openRegistrationModal); // Open registration modal
-            document.getElementById('completeRegisterBtn').addEventListener('click', completeRegistration); // Handle complete registration
-            document.getElementById('logoutBtn').addEventListener('click', logoutUser);
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const completeRegisterBtn = document.getElementById('completeRegisterBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (loginBtn) {
+                loginBtn.addEventListener('click', loginUser);
+                console.log("loginBtn listener attached.");
+            } else {
+                console.error("loginBtn not found!");
+            }
+            if (registerBtn) {
+                registerBtn.addEventListener('click', window.openRegistrationModal);
+                console.log("registerBtn listener attached.");
+            } else {
+                console.error("registerBtn not found!");
+            }
+            if (completeRegisterBtn) {
+                completeRegisterBtn.addEventListener('click', completeRegistration);
+                console.log("completeRegisterBtn listener attached.");
+            } else {
+                console.error("completeRegisterBtn not found!");
+            }
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logoutUser);
+                console.log("logoutBtn listener attached.");
+            } else {
+                console.error("logoutBtn not found!");
+            }
 
             // Event listener for custom role field
             document.getElementById('employeeRole').addEventListener('change', function() {
