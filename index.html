@@ -407,8 +407,8 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        let db;
-        let auth;
+        let db = null; // Initialize as null
+        let auth = null; // Initialize as null
         let userId;
         let currentUserRole = 'guest'; // 'guest', 'user', 'admin'
         let isAuthReady = false;
@@ -498,7 +498,6 @@
                     } else {
                         // If user document doesn't exist, create it with 'user' role
                         // This happens on first login after registration
-                        // (This case is now less likely as registration modal handles initial user doc creation)
                         console.log("User document not found, creating with default 'user' role.");
                         await setDoc(userDocRef, { email: user.email, role: 'user', uid: userId });
                         currentUserRole = 'user';
@@ -546,6 +545,12 @@
 
         async function completeRegistration() {
             console.log("Attempting complete registration...");
+            if (!auth) {
+                console.error("Firebase Auth is not initialized.");
+                document.getElementById('regMessage').textContent = 'Erro: Serviço de autenticação não disponível. Tente novamente mais tarde.';
+                return;
+            }
+
             const fullName = document.getElementById('regFullName').value.trim();
             const cpf = document.getElementById('regCPF').value.trim();
             const dateOfBirth = document.getElementById('regDateOfBirth').value;
@@ -599,6 +604,12 @@
 
         async function loginUser() {
             console.log("Attempting login...");
+            if (!auth) {
+                console.error("Firebase Auth is not initialized.");
+                document.getElementById('authMessage').textContent = 'Erro: Serviço de autenticação não disponível. Tente novamente mais tarde.';
+                return;
+            }
+
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
             const authMessage = document.getElementById('authMessage');
@@ -622,6 +633,11 @@
 
         async function logoutUser() {
             console.log("Attempting logout...");
+            if (!auth) {
+                console.error("Firebase Auth is not initialized.");
+                window.showMessageBox('Erro: Serviço de autenticação não disponível.', 3000);
+                return;
+            }
             try {
                 await signOut(auth);
                 console.log("Logout successful.");
@@ -1546,9 +1562,10 @@
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
-                    console.log("Firebase app, db, auth initialized.");
+                    console.log("Firebase app, db, auth initialized successfully.");
 
                     // Establish initial authentication state
+                    // This will trigger onAuthStateChanged, which then loads data
                     if (initialAuthToken) {
                         console.log("Attempting signInWithCustomToken...");
                         await signInWithCustomToken(auth, initialAuthToken);
@@ -1565,24 +1582,30 @@
 
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase ou autenticar:", error);
-                    window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Usando armazenamento local.`, 7000);
-                    // Fallback to localStorage if Firebase initialization or initial auth fails
+                    window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Funcionalidades de autenticação e persistência não estarão disponíveis.`, 7000);
+                    // Set auth and db to null explicitly to prevent further errors
+                    db = null;
+                    auth = null;
                     userId = crypto.randomUUID(); // Dummy userId for localStorage context
                     currentUserRole = 'guest';
                     isAuthReady = true;
+                    // Still attempt to load/render from localStorage for basic functionality
                     loadEmployees();
                     loadMonthlyObservations();
                     updateAdminUI(); // Ensure UI is updated for guest mode
                 }
             } else {
-                console.warn("Firebase config not found. Falling back to localStorage.");
-                // If no Firebase config, proceed with localStorage
+                console.warn("Firebase config not found. Falling back to localStorage for data, authentication features disabled.");
+                // If no Firebase config, proceed with localStorage only
+                db = null; // Ensure db is null
+                auth = null; // Ensure auth is null
                 userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
                 currentUserRole = 'guest';
                 isAuthReady = true;
                 loadEmployees();
                 loadMonthlyObservations();
                 updateAdminUI(); // Ensure UI is updated for guest mode
+                window.showMessageBox('Configuração do Firebase não encontrada. Funcionalidades de autenticação e persistência estão desativadas.', 7000);
             }
 
             // Authentication button listeners
@@ -1591,6 +1614,7 @@
             const completeRegisterBtn = document.getElementById('completeRegisterBtn');
             const logoutBtn = document.getElementById('logoutBtn');
 
+            // Only attach listeners if Firebase auth is potentially available, or if we want to show a message
             if (loginBtn) {
                 loginBtn.addEventListener('click', loginUser);
                 console.log("loginBtn listener attached.");
