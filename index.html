@@ -154,7 +154,13 @@
             padding-top: 10px;
         }
 
-        /* Removed team colors to be applied directly to name cells */
+        /* Team Colors */
+        .team-sol { color: #f59e0b; } /* Amber */
+        .team-verde { color: #10b981; } /* Emerald */
+        .team-vermelha { color: #ef4444; } /* Red */
+        .team-azul { color: #3b82f6; } /* Blue */
+        .team-laranja { color: #fb923c; } /* Orange */
+        .team-apoio { color: #6b7280; } /* Gray */
 
 
         @media print {
@@ -410,7 +416,8 @@
 
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
-        let employees = [];
+        let employees = []; // Master list of employees (without schedule/vacations)
+        let monthlySchedulesData = {}; // Stores schedule & vacations per employee per month { 'YYYY-MM': { employeeId: { siglas: {}, vacations: [] } } }
         let currentEditingEmployeeId = null;
         let currentEditingDateKey = null; // New: Stores the date key if a specific day is being edited
         let monthlyObservations = {}; // Stores observations per month/year
@@ -465,17 +472,17 @@
 
         function saveEmployees() {
             if (userId && db) {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'employees');
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'employees_master'); // Renamed to avoid confusion
                 setDoc(docRef, { data: JSON.stringify(employees) })
                     .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
             } else {
-                localStorage.setItem('healthScheduleEmployees', JSON.stringify(employees));
+                localStorage.setItem('healthScheduleEmployeesMaster', JSON.stringify(employees));
             }
         }
 
         async function loadEmployees() {
             if (userId && db) {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'employees');
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'employees_master');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -488,11 +495,45 @@
                     employees = [];
                 }
             } else {
-                const storedEmployees = localStorage.getItem('healthScheduleEmployees');
+                const storedEmployees = localStorage.getItem('healthScheduleEmployeesMaster');
                 employees = storedEmployees ? JSON.parse(storedEmployees) : [];
             }
             renderEmployeeList();
-            renderSchedule();
+            // renderSchedule will be called after monthly schedules are loaded
+        }
+
+        // NEW: Save current month's schedule data
+        function saveCurrentMonthSchedule() {
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            if (userId && db) {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'monthly_schedules');
+                setDoc(docRef, { data: JSON.stringify(monthlySchedulesData) })
+                    .catch(error => console.error("Erro ao salvar escalas mensais no Firestore:", error));
+            } else {
+                localStorage.setItem('healthScheduleMonthlySchedules', JSON.stringify(monthlySchedulesData));
+            }
+        }
+
+        // NEW: Load all monthly schedule data
+        async function loadMonthlySchedulesData() {
+            if (userId && db) {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'monthly_schedules');
+                try {
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        monthlySchedulesData = JSON.parse(docSnap.data().data);
+                    } else {
+                        monthlySchedulesData = {};
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar escalas mensais do Firestore:", error);
+                    monthlySchedulesData = {};
+                }
+            } else {
+                const storedSchedules = localStorage.getItem('healthScheduleMonthlySchedules');
+                monthlySchedulesData = storedSchedules ? JSON.parse(storedSchedules) : {};
+            }
+            renderSchedule(); // Render schedule after monthly data is loaded
         }
 
         function saveMonthlyObservations() {
@@ -565,7 +606,8 @@
 
         // New function to save both employees and observations and siglas
         function saveAllData() {
-            saveEmployees();
+            saveEmployees(); // Save active employee list
+            saveCurrentMonthSchedule(); // Save current month's schedule data
             saveMonthlyObservations();
             saveCustomSiglas(); // Save custom siglas
             window.showMessageBox('Escala e dados salvos com sucesso!');
@@ -586,13 +628,20 @@
             return nationalHolidays.includes(dateString);
         }
 
-        function isVacation(employee, year, month, day) {
+        /**
+         * Checks if an employee is on vacation on a specific day for the *current* month.
+         * Fetches vacation data from monthlySchedulesData.
+         */
+        function isVacation(employeeId, year, month, day) {
+            const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const employeeMonthlyData = monthlySchedulesData[monthKey] && monthlySchedulesData[monthKey][employeeId];
+
+            if (!employeeMonthlyData || !employeeMonthlyData.vacations) return false;
+
             const currentDate = new Date(year, month, day);
             currentDate.setHours(0,0,0,0); // Normalize to start of day
 
-            if (!employee.vacations) return false;
-
-            for (const vacation of employee.vacations) {
+            for (const vacation of employeeMonthlyData.vacations) {
                 const startDate = new Date(vacation.start);
                 startDate.setHours(0,0,0,0); // Normalize to start of day
                 const endDate = new Date(vacation.end);
@@ -669,9 +718,13 @@
             sortedEmployees.forEach(emp => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
+                
+                // Determine the team color class
+                const teamColorClass = `team-${emp.team.toLowerCase()}`;
+
                 li.innerHTML = `
                     <div class="flex-grow">
-                        <span class="font-medium text-blue-600 cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
+                        <span class="font-medium ${teamColorClass} cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
                         <span class="text-sm text-gray-500 ml-2">(${emp.role} - ${emp.council} - ${emp.workShift})</span>
                         <span class="text-sm text-gray-500 ml-2">(Equipe: ${emp.team})</span>
                         <span class="text-xs text-gray-400 block break-all">ID: ${emp.id}</span>
@@ -697,6 +750,12 @@
             scheduleBody.innerHTML = '';
 
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+
+            // Ensure current month data structure exists
+            if (!monthlySchedulesData[monthKey]) {
+                monthlySchedulesData[monthKey] = {};
+            }
 
             // Add day headers
             for (let i = 1; i <= daysInMonth; i++) {
@@ -715,9 +774,12 @@
             // Add employee rows
             sortedEmployees.forEach(emp => {
                 const tr = document.createElement('tr');
-                // Removed teamColorClass from here
+                
+                // Determine the team color class for the name cell
+                const teamColorClass = `team-${emp.team.toLowerCase()}`;
+
                 tr.innerHTML = `
-                    <td class="font-medium text-blue-600 cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">
+                    <td class="font-medium ${teamColorClass} cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">
                         ${emp.name}
                     </td>
                     <td>${emp.role}</td>
@@ -730,14 +792,38 @@
                     td.setAttribute('data-date-key', dateKey); // Add data attribute for date key
                     td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
 
-                    if (isVacation(emp, currentYear, currentMonth, i)) {
+                    // Get employee's schedule and vacation data for this specific month
+                    const employeeMonthlySchedule = monthlySchedulesData[monthKey] && monthlySchedulesData[monthKey][emp.id];
+                    const employeeVacations = employeeMonthlySchedule ? employeeMonthlySchedule.vacations : [];
+                    const employeeDailySiglas = employeeMonthlySchedule && employeeMonthlySchedule.siglas && employeeMonthlySchedule.siglas[dateKey] ? employeeMonthlySchedule.siglas[dateKey] : [];
+
+
+                    // Check for vacation based on monthly data
+                    let isCurrentDayVacation = false;
+                    const currentDate = new Date(currentYear, currentMonth, i);
+                    currentDate.setHours(0,0,0,0);
+
+                    for (const vac of employeeVacations) {
+                        const vacStart = new Date(vac.start);
+                        vacStart.setHours(0,0,0,0);
+                        const vacEnd = new Date(vac.end);
+                        vacEnd.setHours(0,0,0,0);
+
+                        if (currentDate >= vacStart && currentDate <= vacEnd) {
+                            isCurrentDayVacation = true;
+                            break;
+                        }
+                    }
+
+
+                    if (isCurrentDayVacation) {
                         // Check if this is the start of a vacation block for merging
-                        const prevDayIsVacation = i > 1 && isVacation(emp, currentYear, currentMonth, i - 1);
+                        const prevDayIsVacation = i > 1 && isVacation(emp.id, currentYear, currentMonth, i - 1);
 
                         if (!prevDayIsVacation) {
                             let span = 1;
                             let j = i + 1;
-                            while (j <= daysInMonth && isVacation(emp, currentYear, currentMonth, j)) {
+                            while (j <= daysInMonth && isVacation(emp.id, currentYear, currentMonth, j)) {
                                 span++;
                                 j++;
                             }
@@ -752,8 +838,7 @@
                         }
                     } else {
                         // Display multiple siglas joined by comma
-                        const siglas = emp.schedule && emp.schedule[dateKey] ? emp.schedule[dateKey] : [];
-                        td.textContent = Array.isArray(siglas) ? siglas.join(', ') : siglas; // Handle old string format if any
+                        td.textContent = Array.isArray(employeeDailySiglas) ? employeeDailySiglas.join(', ') : employeeDailySiglas; // Handle old string format if any
                         if (isWeekend(currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i)) {
                             td.classList.add('weekend');
                         }
@@ -853,14 +938,13 @@
                     role,
                     council,
                     workShift,
-                    team, // Add team to employee object
-                    schedule: {}, // { 'YYYY-MM-DD': ['SIGLA1', 'SIGLA2'] }
-                    vacations: [] // [{ start: 'YYYY-MM-DD', end: 'YYYY-MM-DD' }]
+                    team // Add team to employee object
+                    // schedule and vacations are no longer stored here
                 };
                 employees.push(newEmployee);
-                saveEmployees();
+                saveEmployees(); // Save master employee list
                 renderEmployeeList();
-                renderSchedule();
+                renderSchedule(); // Rerender to show new employee (without schedule yet for current month)
                 document.getElementById('employeeName').value = '';
                 document.getElementById('employeeRole').value = '';
                 document.getElementById('customEmployeeRole').value = ''; // Clear custom role field
@@ -875,12 +959,13 @@
         }
 
         window.deleteEmployee = function(id) {
-            if (confirm('Tem certeza que deseja excluir este funcionário?')) {
+            if (confirm('Tem certeza que deseja excluir este funcionário? Isso o removerá da lista de funcionários ativos, mas suas escalas em meses anteriores permanecerão nos registros históricos daquele mês.')) {
                 employees = employees.filter(emp => emp.id !== id);
-                saveEmployees();
+                saveEmployees(); // Update master employee list
                 renderEmployeeList();
-                renderSchedule();
-                window.showMessageBox('Funcionário excluído.');
+                renderSchedule(); // Rerender to remove from current month
+                // Note: Historical monthly data for this employee will remain in monthlySchedulesData
+                window.showMessageBox('Funcionário excluído da lista ativa.');
             }
         }
 
@@ -890,6 +975,22 @@
             currentEditingEmployeeId = employeeId;
             currentEditingDateKey = dateKey; // Store the dateKey
             const employee = employees.find(emp => emp.id === employeeId);
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+
+            // Get the specific employee's schedule for the current month
+            const employeeCurrentMonthSchedule = monthlySchedulesData[monthKey] && monthlySchedulesData[monthKey][employeeId] ?
+                                                monthlySchedulesData[monthKey][employeeId] :
+                                                { siglas: {}, vacations: [] };
+            
+            // Ensure the employee entry exists for the current month in monthlySchedulesData
+            if (!monthlySchedulesData[monthKey]) {
+                monthlySchedulesData[monthKey] = {};
+            }
+            if (!monthlySchedulesData[monthKey][employeeId]) {
+                monthlySchedulesData[monthKey][employeeId] = { siglas: {}, vacations: [] };
+            }
+
+
             if (employee) {
                 document.getElementById('modalEmployeeName').textContent = `Editar Escala de: ${employee.name}`;
                 document.getElementById('siglaVacationModal').classList.remove('hidden');
@@ -923,7 +1024,7 @@
                     const checkboxesDay = document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]');
                     checkboxesDay.forEach(cb => cb.checked = false); // Uncheck all first
 
-                    const siglasForDay = employee.schedule && employee.schedule[currentEditingDateKey] ? employee.schedule[currentEditingDateKey] : [];
+                    const siglasForDay = employeeCurrentMonthSchedule.siglas && employeeCurrentMonthSchedule.siglas[currentEditingDateKey] ? employeeCurrentMonthSchedule.siglas[currentEditingDateKey] : [];
                     if (Array.isArray(siglasForDay)) {
                         siglasForDay.forEach(sigla => {
                             const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${sigla}"]`);
@@ -951,7 +1052,7 @@
 
                     for (let i = 1; i <= daysInMonth; i++) {
                         const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                        const siglasForDay = employee.schedule && employee.schedule[dateKey] ? employee.schedule[dateKey] : [];
+                        const siglasForDay = employeeCurrentMonthSchedule.siglas && employeeCurrentMonthSchedule.siglas[dateKey] ? employeeCurrentMonthSchedule.siglas[dateKey] : [];
                         if (Array.isArray(siglasForDay)) {
                             // Exclude daily-only siglas from general month view pre-check
                             siglasForDay.filter(s => !dailyOnlySiglas.includes(s)).forEach(sigla => currentMonthSiglas.add(sigla));
@@ -985,27 +1086,26 @@
                 return;
             }
 
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-
-            const employee = employees[employeeIndex];
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
+            
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 // Check for vacation on the specific day (important before applying month-wide siglas)
-                if (isVacation(employee, currentYear, currentMonth, i)) {
+                if (isVacation(currentEditingEmployeeId, currentYear, currentMonth, i)) {
                     continue; // Skip if it's a vacation day
                 }
 
                 if (!isWeekend(currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i)) {
                     // Preserve daily-only siglas if they were set for a specific day
-                    const existingSiglas = employee.schedule[dateKey] || [];
+                    const existingSiglas = employeeMonthlyData.siglas[dateKey] || [];
                     const preservedSiglas = Array.isArray(existingSiglas) ? existingSiglas.filter(s => dailyOnlySiglas.includes(s)) : [];
-                    employee.schedule[dateKey] = [...new Set([...preservedSiglas, ...selectedSiglas])]; // Combine and remove duplicates
+                    employeeMonthlyData.siglas[dateKey] = [...new Set([...preservedSiglas, ...selectedSiglas])]; // Combine and remove duplicates
                 }
             }
-            saveEmployees();
+            saveCurrentMonthSchedule(); // Save changes to the monthly schedule data
             renderSchedule();
             window.showMessageBox('Sigla(s) aplicada(s) para os dias úteis do mês.');
             window.closeSiglaVacationModal();
@@ -1013,25 +1113,24 @@
 
         function clearSiglasForMonth() {
             if (confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionário para o mês atual?')) {
-                const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-                if (employeeIndex === -1) return;
+                const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
 
-                const employee = employees[employeeIndex];
                 const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                     // Preserve daily-only siglas when clearing month siglas
-                    const existingSiglas = employee.schedule[dateKey] || [];
+                    const existingSiglas = employeeMonthlyData.siglas[dateKey] || [];
                     const preservedSiglas = Array.isArray(existingSiglas) ? existingSiglas.filter(s => dailyOnlySiglas.includes(s)) : [];
 
                     if (preservedSiglas.length > 0) {
-                        employee.schedule[dateKey] = preservedSiglas;
+                        employeeMonthlyData.siglas[dateKey] = preservedSiglas;
                     } else {
-                        delete employee.schedule[dateKey];
+                        delete employeeMonthlyData.siglas[dateKey];
                     }
                 }
-                saveEmployees();
+                saveCurrentMonthSchedule();
                 renderSchedule();
                 window.showMessageBox('Siglas do funcionário para o mês atual limpas (exceto folgas e licenças médicas).');
                 window.closeSiglaVacationModal();
@@ -1050,10 +1149,8 @@
                 return;
             }
 
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-
-            const employee = employees[employeeIndex];
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
 
             // For single day, we replace existing siglas with selected ones, but don't overwrite if it's a vacation
             const dateParts = currentEditingDateKey.split('-');
@@ -1061,14 +1158,14 @@
             const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
             const day = parseInt(dateParts[2]);
 
-            if (isVacation(employee, year, month, day)) {
+            if (isVacation(currentEditingEmployeeId, year, month, day)) {
                 window.showMessageBox('Não é possível aplicar siglas em um dia de férias.', 3000);
                 return;
             }
 
-            employee.schedule[currentEditingDateKey] = selectedSiglas;
+            employeeMonthlyData.siglas[currentEditingDateKey] = selectedSiglas;
 
-            saveEmployees();
+            saveCurrentMonthSchedule();
             renderSchedule();
             window.showMessageBox(`Sigla(s) aplicada(s) para o dia ${currentEditingDateKey.split('-')[2]}.`);
             window.closeSiglaVacationModal();
@@ -1080,14 +1177,13 @@
                 return;
             }
             if (confirm(`Tem certeza que deseja limpar as siglas para o dia ${currentEditingDateKey.split('-')[2]}?`)) {
-                const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-                if (employeeIndex === -1) return;
+                const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
 
-                const employee = employees[employeeIndex];
-                if (employee.schedule && employee.schedule[currentEditingDateKey]) {
-                    delete employee.schedule[currentEditingDateKey];
+                if (employeeMonthlyData.siglas && employeeMonthlyData.siglas[currentEditingDateKey]) {
+                    delete employeeMonthlyData.siglas[currentEditingDateKey];
                 }
-                saveEmployees();
+                saveCurrentMonthSchedule();
                 renderSchedule();
                 window.showMessageBox(`Siglas para o dia ${currentEditingDateKey.split('-')[2]} limpas.`);
                 window.closeSiglaVacationModal();
@@ -1105,10 +1201,8 @@
                 return;
             }
 
-            const startDate = new Date(startDateStr);
-            startDate.setHours(0,0,0,0); // Normalize to start of day
-            const endDate = new Date(endDateStr);
-            endDate.setHours(0,0,0,0); // Normalize to start of day
+            const startDate = new Date(startDateStr + 'T00:00:00'); // Use 'T00:00:00' to avoid timezone issues
+            const endDate = new Date(endDateStr + 'T00:00:00'); // Use 'T00:00:00' to avoid timezone issues
 
 
             if (startDate > endDate) {
@@ -1116,10 +1210,9 @@
                 return;
             }
 
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-
-            const employee = employees[employeeIndex];
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
+            
             let tempDate = new Date(startDate); // Use a new Date object for iteration
             let appliedCount = 0;
 
@@ -1129,20 +1222,28 @@
                 const day = tempDate.getDate();
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-                if (!isVacation(employee, year, month, day)) {
-                    // Overwrite existing siglas for this day, but not if it's a vacation
-                    employee.schedule[dateKey] = [multiDaySiglaType];
-                    appliedCount++;
+                // Only apply if it's within the current displayed month, or if it's a cross-month application for LM/FO
+                const isWithinCurrentDisplayMonth = (year === currentYear && month === currentMonth);
+
+                if (!isVacation(currentEditingEmployeeId, year, month, day)) {
+                    if (isWithinCurrentDisplayMonth) {
+                        employeeMonthlyData.siglas[dateKey] = [multiDaySiglaType];
+                        appliedCount++;
+                    } else if (tempDate.getMonth() === startDate.getMonth() && tempDate.getFullYear() === startDate.getFullYear()) {
+                        // Apply to start month even if it's not the current displayed month
+                         // This case shouldn't be hit with the current logic, but ensures if date picker changes month, it still works.
+                         // For now, we only care about the currently displayed month's data.
+                    }
                 }
                 tempDate.setDate(tempDate.getDate() + 1);
             }
 
-            saveEmployees();
+            saveCurrentMonthSchedule();
             renderSchedule();
             if (appliedCount > 0) {
                 window.showMessageBox(`${multiDaySiglaType} aplicada para ${appliedCount} dia(s) no período.`);
             } else {
-                window.showMessageBox(`Nenhum dia de ${multiDaySiglaType} aplicado, pois todos os dias no período são férias.`);
+                window.showMessageBox(`Nenhum dia de ${multiDaySiglaType} aplicado no mês atual, pois todos os dias no período são férias ou fora do mês atual.`);
             }
             window.closeSiglaVacationModal();
         }
@@ -1158,10 +1259,8 @@
                 return;
             }
 
-            const startDate = new Date(startDateStr);
-            startDate.setHours(0,0,0,0); // Normalize to start of day
-            const endDate = new Date(endDateStr);
-            endDate.setHours(0,0,0,0); // Normalize to start of day
+            const startDate = new Date(startDateStr + 'T00:00:00');
+            const endDate = new Date(endDateStr + 'T00:00:00');
 
             if (startDate > endDate) {
                 window.showMessageBox('A data de início não pode ser posterior à data de fim.', 4000);
@@ -1172,10 +1271,9 @@
                 return;
             }
 
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-
-            const employee = employees[employeeIndex];
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
+            
             let tempDate = new Date(startDate);
             let clearedCount = 0;
 
@@ -1185,29 +1283,34 @@
                 const day = tempDate.getDate();
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-                if (employee.schedule && employee.schedule[dateKey]) {
-                    const existingSiglas = Array.isArray(employee.schedule[dateKey]) ? employee.schedule[dateKey] : [employee.schedule[dateKey]];
-                    const newSiglas = existingSiglas.filter(s => s !== multiDaySiglaType);
+                // Only clear if it's within the current displayed month
+                const isWithinCurrentDisplayMonth = (year === currentYear && month === currentMonth);
 
-                    if (newSiglas.length !== existingSiglas.length) { // Only increment if something was actually removed
-                        clearedCount++;
-                    }
+                if (isWithinCurrentDisplayMonth) {
+                    if (employeeMonthlyData.siglas && employeeMonthlyData.siglas[dateKey]) {
+                        const existingSiglas = Array.isArray(employeeMonthlyData.siglas[dateKey]) ? employeeMonthlyData.siglas[dateKey] : [employeeMonthlyData.siglas[dateKey]];
+                        const newSiglas = existingSiglas.filter(s => s !== multiDaySiglaType);
 
-                    if (newSiglas.length === 0) {
-                        delete employee.schedule[dateKey];
-                    } else {
-                        employee.schedule[dateKey] = newSiglas;
+                        if (newSiglas.length !== existingSiglas.length) { // Only increment if something was actually removed
+                            clearedCount++;
+                        }
+
+                        if (newSiglas.length === 0) {
+                            delete employeeMonthlyData.siglas[dateKey];
+                        } else {
+                            employeeMonthlyData.siglas[dateKey] = newSiglas;
+                        }
                     }
                 }
                 tempDate.setDate(tempDate.getDate() + 1);
             }
 
-            saveEmployees();
+            saveCurrentMonthSchedule();
             renderSchedule();
             if (clearedCount > 0) {
                 window.showMessageBox(`${multiDaySiglaType} limpa para ${clearedCount} dia(s) no período.`);
             } else {
-                window.showMessageBox(`Nenhum dia de ${multiDaySiglaType} encontrado ou limpo no período.`);
+                window.showMessageBox(`Nenhum dia de ${multiDaySiglaType} encontrado ou limpo no período atual.`);
             }
             window.closeSiglaVacationModal();
         }
@@ -1222,10 +1325,8 @@
                 return;
             }
 
-            const startDate = new Date(vacationStart);
-            startDate.setHours(0,0,0,0); // Normalize to start of day
-            const endDate = new Date(vacationEnd);
-            endDate.setHours(0,0,0,0); // Normalize to start of day
+            const startDate = new Date(vacationStart + 'T00:00:00');
+            const endDate = new Date(vacationEnd + 'T00:00:00');
 
 
             if (startDate > endDate) {
@@ -1233,56 +1334,61 @@
                 return;
             }
 
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
 
-            const employee = employees[employeeIndex];
-            if (!employee.vacations) employee.vacations = [];
+            if (!employeeMonthlyData.vacations) employeeMonthlyData.vacations = [];
 
-            // Clear any existing schedule entries within the vacation period
+            // Clear any existing schedule entries within the vacation period for the current month
             let tempDate = new Date(startDate);
             while (tempDate <= endDate) {
-                const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
-                delete employee.schedule[dateKey]; // Vacations overwrite any other siglas
+                const year = tempDate.getFullYear();
+                const month = tempDate.getMonth();
+                const day = tempDate.getDate();
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                // Only clear if the day is within the currently displayed month
+                if (year === currentYear && month === currentMonth) {
+                    delete employeeMonthlyData.siglas[dateKey]; // Vacations overwrite any other siglas
+                }
                 tempDate.setDate(tempDate.getDate() + 1);
             }
 
-            // Add the new vacation period
-            employee.vacations.push({ start: vacationStart, end: vacationEnd }); // Store as YYYY-MM-DD strings
-            saveEmployees();
+            // Add the new vacation period to the current month's schedule data
+            // Filter out existing overlapping vacations if desired, or just add
+            employeeMonthlyData.vacations.push({ start: vacationStart, end: vacationEnd }); // Store as YYYY-MM-DD strings
+            
+            saveCurrentMonthSchedule(); // Save changes to the monthly schedule data
             renderSchedule();
             window.showMessageBox('Férias aplicadas com sucesso!');
             window.closeSiglaVacationModal();
         }
 
         function clearVacation() {
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-
-            const employee = employees[employeeIndex];
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
             
-            if (confirm('Tem certeza que deseja limpar TODAS as férias deste funcionário?')) {
-                employee.vacations = []; // Clear all vacations for this employee
+            if (confirm('Tem certeza que deseja limpar TODAS as férias deste funcionário para o mês atual e remover entradas de férias em outros meses que se sobreponham a este mês?')) {
+                employeeMonthlyData.vacations = []; // Clear all vacations for this employee FOR THIS MONTH
 
-                saveEmployees();
+                saveCurrentMonthSchedule();
                 renderSchedule();
-                window.showMessageBox('Férias do funcionário limpas.');
+                window.showMessageBox('Férias do funcionário para o mês atual limpas.');
                 window.closeSiglaVacationModal();
             }
         }
 
         function clearEmployeeSchedule() {
-            if (confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário? Isso é irreversível.')) {
-                const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-                if (employeeIndex === -1) return;
+            if (confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário SOMENTE para o mês atual?')) {
+                const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                const employeeMonthlyData = monthlySchedulesData[monthKey][currentEditingEmployeeId];
 
-                const employee = employees[employeeIndex];
-                employee.schedule = {}; // Clear all schedule
-                employee.vacations = []; // Clear all vacations
+                employeeMonthlyData.siglas = {}; // Clear all schedule
+                employeeMonthlyData.vacations = []; // Clear all vacations
 
-                saveEmployees();
+                saveCurrentMonthSchedule();
                 renderSchedule();
-                window.showMessageBox('Escala e férias do funcionário limpas.');
+                window.showMessageBox('Escala e férias do funcionário limpas para o mês atual.');
                 window.closeSiglaVacationModal();
             }
         }
@@ -1339,6 +1445,9 @@
 
         function printSchedule() {
             const printWindow = window.open('', '_blank');
+            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const currentMonthSchedule = monthlySchedulesData[monthKey] || {};
+
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html lang="pt-BR">
@@ -1369,7 +1478,14 @@
                             padding-top: 10px;
                             page-break-before: avoid; /* Avoid breaking page before legend */
                         }
-                        /* Removed team colors for print */
+                        /* Team Colors for Print */
+                        .team-sol { color: #f59e0b !important; } /* Amber */
+                        .team-verde { color: #10b981 !important; } /* Emerald */
+                        .team-vermelha { color: #ef4444 !important; } /* Red */
+                        .team-azul { color: #3b82f6 !important; } /* Blue */
+                        .team-laranja { color: #fb923c !important; } /* Orange */
+                        .team-apoio { color: #6b7280 !important; } /* Gray */
+
 
                         /* Column widths for print */
                         .printable-table th:nth-child(1) { width: 12%; } /* Nome */
@@ -1409,8 +1525,12 @@
                                 </thead>
                                 <tbody>
                                     ${sortEmployeesByRole(employees).map(emp => {
+                                        const teamColorClass = `team-${emp.team.toLowerCase()}`; // Get team class for print
+                                        const employeeMonthlySchedule = currentMonthSchedule[emp.id] || { siglas: {}, vacations: [] };
+                                        const employeeVacations = employeeMonthlySchedule.vacations;
+                                        
                                         let rowHtml = `<tr>
-                                            <td class="font-medium">
+                                            <td class="font-medium ${teamColorClass}">
                                                 ${emp.name}
                                             </td>
                                             <td>${emp.role}</td>
@@ -1423,13 +1543,30 @@
                                             let cellContent = '';
                                             let cellClasses = '';
 
-                                            if (isVacation(emp, currentYear, currentMonth, i)) {
+                                            // Check for vacation based on monthly data
+                                            let isCurrentDayVacation = false;
+                                            const currentDate = new Date(currentYear, currentMonth, i);
+                                            currentDate.setHours(0,0,0,0);
+
+                                            for (const vac of employeeVacations) {
+                                                const vacStart = new Date(vac.start);
+                                                vacStart.setHours(0,0,0,0);
+                                                const vacEnd = new Date(vac.end);
+                                                vacEnd.setHours(0,0,0,0);
+
+                                                if (currentDate >= vacStart && currentDate <= vacEnd) {
+                                                    isCurrentDayVacation = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (isCurrentDayVacation) {
                                                 // Check if this is the start of a vacation block for merging
-                                                const prevDayIsVacation = i > 1 && isVacation(emp, currentYear, currentMonth, i - 1);
+                                                const prevDayIsVacation = i > 1 && isVacation(emp.id, currentYear, currentMonth, i - 1);
                                                 if (!prevDayIsVacation) {
                                                     let span = 1;
                                                     let j = i + 1;
-                                                    while (j <= getDaysInMonth(currentYear, currentMonth) && isVacation(emp, currentYear, currentMonth, j)) {
+                                                    while (j <= getDaysInMonth(currentYear, currentMonth) && isVacation(emp.id, currentYear, currentMonth, j)) {
                                                         span++;
                                                         j++;
                                                     }
@@ -1440,7 +1577,7 @@
                                                 }
                                             } else {
                                                 // Display multiple siglas joined by comma
-                                                const siglas = emp.schedule && emp.schedule[dateKey] ? emp.schedule[dateKey] : [];
+                                                const siglas = employeeMonthlySchedule.siglas[dateKey] ? employeeMonthlySchedule.siglas[dateKey] : [];
                                                 cellContent = Array.isArray(siglas) ? siglas.join(', ') : siglas;
                                                 if (isDayWeekend || isDayHoliday) {
                                                     cellClasses = 'weekend';
@@ -1509,62 +1646,66 @@
 
             const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
             const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-            const daysInNextMonth = getDaysInMonth(nextYear, nextMonth);
 
-            employees.forEach(emp => {
-                const newSchedule = {};
-                const newVacations = [];
+            const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            const nextMonthKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}`;
 
-                // Copy and shift existing vacations to the next month
-                if (emp.vacations) {
-                    emp.vacations.forEach(vac => {
-                        const newStartDate = addMonthsToDate(vac.start, 1);
-                        const newEndDate = addMonthsToDate(vac.end, 1);
-                        
-                        newVacations.push({
-                            start: newStartDate.toISOString().split('T')[0],
-                            end: newEndDate.toISOString().split('T')[0]
+            const currentMonthScheduleSnapshot = monthlySchedulesData[currentMonthKey] || {};
+            const newNextMonthSchedule = {};
+
+            // Iterate over employees in the current month's snapshot
+            for (const employeeId in currentMonthScheduleSnapshot) {
+                if (currentMonthScheduleSnapshot.hasOwnProperty(employeeId)) {
+                    const employeeDataForThisMonth = currentMonthScheduleSnapshot[employeeId];
+                    
+                    const newEmployeeScheduleEntry = {
+                        siglas: {},
+                        vacations: []
+                    };
+
+                    // Copy and shift existing vacations to the next month
+                    if (employeeDataForThisMonth.vacations) {
+                        employeeDataForThisMonth.vacations.forEach(vac => {
+                            const newStartDate = addMonthsToDate(vac.start, 1);
+                            const newEndDate = addMonthsToDate(vac.end, 1);
+                            
+                            newEmployeeScheduleEntry.vacations.push({
+                                start: newStartDate.toISOString().split('T')[0],
+                                end: newEndDate.toISOString().split('T')[0]
+                            });
                         });
-                    });
-                }
+                    }
 
-                // Copy daily schedule (siglas) regardless of weekend/holiday status in target month
-                if (emp.schedule) {
-                    for (let i = 1; i <= getDaysInMonth(currentYear, currentMonth); i++) {
-                        const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                        const siglasForCurrentDay = emp.schedule[currentMonthDateKey];
+                    // Copy daily schedule (siglas)
+                    if (employeeDataForThisMonth.siglas) {
+                        for (const dateKey in employeeDataForThisMonth.siglas) {
+                            if (employeeDataForThisMonth.siglas.hasOwnProperty(dateKey)) {
+                                const siglasForCurrentDay = employeeDataForThisMonth.siglas[dateKey];
+                                
+                                const currentDayDate = new Date(dateKey + 'T00:00:00');
+                                const nextMonthDate = addMonthsToDate(dateKey, 1);
 
-                        if (siglasForCurrentDay) {
-                            // Calculate the corresponding day in the next month
-                            const nextMonthDate = new Date(currentYear, currentMonth, i); // Use current date to calc next month's day
-                            nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-                            nextMonthDate.setHours(0,0,0,0); // Normalize
+                                // Ensure the day is valid for the next month
+                                const maxDaysInNextMonth = getDaysInMonth(nextMonthDate.getFullYear(), nextMonthDate.getMonth());
+                                let targetDay = nextMonthDate.getDate();
+                                if (targetDay > maxDaysInNextMonth) {
+                                    targetDay = maxDaysInNextMonth;
+                                }
 
-                            // Ensure day exists in next month (e.g., Feb 30 -> Mar 2)
-                            const maxDaysInNextMonth = getDaysInMonth(nextMonthDate.getFullYear(), nextMonthDate.getMonth());
-                            let targetDay = nextMonthDate.getDate();
-                            if (targetDay > maxDaysInNextMonth) {
-                                targetDay = maxDaysInNextMonth;
+                                const nextMonthDateKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+                                
+                                newEmployeeScheduleEntry.siglas[nextMonthDateKey] = Array.isArray(siglasForCurrentDay) ? [...siglasForCurrentDay] : [siglasForCurrentDay];
                             }
-
-                            const nextMonthDateKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
-
-                            // Copy directly, no checks for weekends/holidays/vacations in target month here for siglas
-                            newSchedule[nextMonthDateKey] = Array.isArray(siglasForCurrentDay) ? [...siglasForCurrentDay] : [siglasForCurrentDay];
                         }
                     }
+                    newNextMonthSchedule[employeeId] = newEmployeeScheduleEntry;
                 }
+            }
 
-                // Update employee's schedule and vacations
-                emp.schedule = newSchedule;
-                emp.vacations = newVacations;
-            });
+            monthlySchedulesData[nextMonthKey] = newNextMonthSchedule; // Overwrite or create next month's schedule
+            monthlyObservations[nextMonthKey] = monthlyObservations[currentMonthKey] || ''; // Copy observations too
 
-            // Clear observations for the next month
-            const nextMonthObsKey = `${nextYear}-${nextMonth + 1}`;
-            monthlyObservations[nextMonthObsKey] = ''; // Clear observations for the next month
-
-            saveAllData(); // Save all changes
+            saveAllData(); // Save all modified data
             currentMonth = nextMonth;
             currentYear = nextYear;
             renderSchedule();
@@ -1602,9 +1743,10 @@
                         }
                         isAuthReady = true;
                         // Load data only after auth is ready and userId is set
-                        loadEmployees();
-                        loadMonthlyObservations();
-                        loadCustomSiglas(); // Load custom siglas
+                        await loadEmployees(); // Load master employee list first
+                        await loadMonthlySchedulesData(); // Then load monthly schedule data
+                        await loadMonthlyObservations();
+                        await loadCustomSiglas(); // Load custom siglas
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase:", error);
@@ -1612,17 +1754,19 @@
                     // Fallback to localStorage if Firebase initialization fails
                     userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
                     isAuthReady = true;
-                    loadEmployees();
-                    loadMonthlyObservations();
-                    loadCustomSiglas(); // Load custom siglas
+                    await loadEmployees();
+                    await loadMonthlySchedulesData();
+                    await loadMonthlyObservations();
+                    await loadCustomSiglas(); // Load custom siglas
                 }
             } else {
                 // If no Firebase config, proceed with localStorage
                 userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
                 isAuthReady = true;
-                loadEmployees();
-                loadMonthlyObservations();
-                loadCustomSiglas(); // Load custom siglas
+                await loadEmployees();
+                await loadMonthlySchedulesData();
+                await loadMonthlyObservations();
+                await loadCustomSiglas(); // Load custom siglas
             }
 
             // Event listener for custom role field
@@ -1639,6 +1783,7 @@
 
             document.getElementById('addEmployeeBtn').addEventListener('click', addEmployee);
             document.getElementById('prevMonth').addEventListener('click', () => {
+                saveCurrentMonthSchedule(); // Save current month's changes before navigating
                 currentMonth--;
                 if (currentMonth < 0) {
                     currentMonth = 11;
@@ -1648,6 +1793,7 @@
                 loadMonthlyObservations(); // Reload observations for new month
             });
             document.getElementById('nextMonth').addEventListener('click', () => {
+                saveCurrentMonthSchedule(); // Save current month's changes before navigating
                 currentMonth++;
                 if (currentMonth > 11) {
                     currentMonth = 0;
