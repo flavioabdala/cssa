@@ -154,13 +154,21 @@
             padding-top: 10px;
         }
 
-        /* Team Colors */
-        .team-sol { color: #f59e0b; } /* Amber */
-        .team-verde { color: #10b981; } /* Emerald */
-        .team-vermelha { color: #ef4444; } /* Red */
-        .team-azul { color: #3b82f6; } /* Blue */
-        .team-laranja { color: #fb923c; } /* Orange */
-        .team-apoio { color: #6b7280; } /* Gray */
+        /* Team Colors - Original (for text if needed, though now name is normal) */
+        .text-team-sol { color: #f59e0b; } /* Amber */
+        .text-team-verde { color: #10b981; } /* Emerald */
+        .text-team-vermelha { color: #ef4444; } /* Red */
+        .text-team-azul { color: #3b82f6; } /* Blue */
+        .text-team-laranja { color: #fb923c; } /* Orange */
+        .text-team-apoio { color: #6b7280; } /* Gray */
+
+        /* Team Colors for Table Cells (Background) */
+        .bg-team-sol { background-color: #fde68a; } /* Amber-100 */
+        .bg-team-verde { background-color: #d1fae5; } /* Emerald-100 */
+        .bg-team-vermelha { background-color: #fee2e2; } /* Red-100 */
+        .bg-team-azul { background-color: #dbeafe; } /* Blue-100 */
+        .bg-team-laranja { background-color: #ffedd5; } /* Orange-100 */
+        .bg-team-apoio { background-color: #e2e8f0; } /* Slate-200 (light gray) */
 
 
         @media print {
@@ -207,6 +215,14 @@
             .printable-table th:nth-child(4) { width: 8%; } /* Horário de Trabalho */
             /* Calculate remaining width for days dynamically */
             .printable-table th:nth-child(n+5) { width: calc(62% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
+
+            /* Team Colors for Print (Background) */
+            .printable-table .bg-team-sol { background-color: #fde68a !important; }
+            .printable-table .bg-team-verde { background-color: #d1fae5 !important; }
+            .printable-table .bg-team-vermelha { background-color: #fee2e2 !important; }
+            .printable-table .bg-team-azul { background-color: #dbeafe !important; }
+            .printable-table .bg-team-laranja { background-color: #ffedd5 !important; }
+            .printable-table .bg-team-apoio { background-color: #e2e8f0 !important; }
 
             .printable-footer {
                 position: fixed;
@@ -719,12 +735,11 @@
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
                 
-                // Determine the team color class
-                const teamColorClass = `team-${emp.team.toLowerCase()}`;
-
+                // Original: <span class="font-medium ${teamColorClass} cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
+                // Now: Name will be normal color
                 li.innerHTML = `
                     <div class="flex-grow">
-                        <span class="font-medium ${teamColorClass} cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
+                        <span class="font-medium cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
                         <span class="text-sm text-gray-500 ml-2">(${emp.role} - ${emp.council} - ${emp.workShift})</span>
                         <span class="text-sm text-gray-500 ml-2">(Equipe: ${emp.team})</span>
                         <span class="text-xs text-gray-400 block break-all">ID: ${emp.id}</span>
@@ -775,11 +790,11 @@
             sortedEmployees.forEach(emp => {
                 const tr = document.createElement('tr');
                 
-                // Determine the team color class for the name cell
-                const teamColorClass = `team-${emp.team.toLowerCase()}`;
+                // Determine the team color class for the name cell background
+                const teamBgClass = `bg-team-${emp.team.toLowerCase()}`;
 
                 tr.innerHTML = `
-                    <td class="font-medium ${teamColorClass} cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">
+                    <td class="font-medium cursor-pointer ${teamBgClass}" onclick="window.openSiglaVacationModal('${emp.id}')">
                         ${emp.name}
                     </td>
                     <td>${emp.role}</td>
@@ -793,9 +808,11 @@
                     td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
 
                     // Get employee's schedule and vacation data for this specific month
-                    const employeeMonthlySchedule = monthlySchedulesData[monthKey] && monthlySchedulesData[monthKey][emp.id];
-                    const employeeVacations = employeeMonthlySchedule ? employeeMonthlySchedule.vacations : [];
-                    const employeeDailySiglas = employeeMonthlySchedule && employeeMonthlySchedule.siglas && employeeMonthlySchedule.siglas[dateKey] ? employeeMonthlySchedule.siglas[dateKey] : [];
+                    const employeeMonthlySchedule = monthlySchedulesData[monthKey] && monthlySchedulesData[monthKey][emp.id] ?
+                                                monthlySchedulesData[monthKey][emp.id] :
+                                                { siglas: {}, vacations: [] };
+                    const employeeVacations = employeeMonthlySchedule.vacations;
+                    const employeeDailySiglas = employeeMonthlySchedule.siglas && employeeMonthlySchedule.siglas[dateKey] ? employeeMonthlySchedule.siglas[dateKey] : [];
 
 
                     // Check for vacation based on monthly data
@@ -1478,13 +1495,13 @@
                             padding-top: 10px;
                             page-break-before: avoid; /* Avoid breaking page before legend */
                         }
-                        /* Team Colors for Print */
-                        .team-sol { color: #f59e0b !important; } /* Amber */
-                        .team-verde { color: #10b981 !important; } /* Emerald */
-                        .team-vermelha { color: #ef4444 !important; } /* Red */
-                        .team-azul { color: #3b82f6 !important; } /* Blue */
-                        .team-laranja { color: #fb923c !important; } /* Orange */
-                        .team-apoio { color: #6b7280 !important; } /* Gray */
+                        /* Team Colors for Print (Background) */
+                        .bg-team-sol { background-color: #fde68a !important; }
+                        .bg-team-verde { background-color: #d1fae5 !important; }
+                        .bg-team-vermelha { background-color: #fee2e2 !important; }
+                        .bg-team-azul { background-color: #dbeafe !important; }
+                        .bg-team-laranja { background-color: #ffedd5 !important; }
+                        .bg-team-apoio { background-color: #e2e8f0 !important; }
 
 
                         /* Column widths for print */
@@ -1525,12 +1542,12 @@
                                 </thead>
                                 <tbody>
                                     ${sortEmployeesByRole(employees).map(emp => {
-                                        const teamColorClass = `team-${emp.team.toLowerCase()}`; // Get team class for print
+                                        const teamBgClass = `bg-team-${emp.team.toLowerCase()}`; // Get team class for print
                                         const employeeMonthlySchedule = currentMonthSchedule[emp.id] || { siglas: {}, vacations: [] };
                                         const employeeVacations = employeeMonthlySchedule.vacations;
                                         
                                         let rowHtml = `<tr>
-                                            <td class="font-medium ${teamColorClass}">
+                                            <td class="font-medium ${teamBgClass}">
                                                 ${emp.name}
                                             </td>
                                             <td>${emp.role}</td>
