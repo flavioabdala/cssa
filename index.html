@@ -232,7 +232,7 @@
                 <input type="text" id="employeeName" placeholder="Nome do Funcionário" class="input-field">
                 <select id="employeeRole" class="input-field">
                     <option value="">Selecione a Função</option>
-                    <option value="Técnico">Técnico</option>
+                    <option value="Técnico Enfermagem">Técnico Enfermagem</option>
                     <option value="Enfermeiro">Enfermeiro</option>
                     <option value="Outro">Outro</option>
                 </select>
@@ -418,7 +418,7 @@
         // Define default siglas and a place for custom ones
         const defaultSiglas = [
             { name: 'F', description: 'Farmácia' },
-            { name: 'S', description: 'Sala de Observação' }, // Changed from SOE to S
+            { name: 'S', description: 'Sala de Observação' },
             { name: 'P', description: 'Presente' },
             { name: 'CT', description: 'Curativo' },
             { name: 'BR', description: 'Acolhimento Baixo Risco' },
@@ -588,15 +588,15 @@
 
         function isVacation(employee, year, month, day) {
             const currentDate = new Date(year, month, day);
+            currentDate.setHours(0,0,0,0); // Normalize to start of day
+
             if (!employee.vacations) return false;
 
             for (const vacation of employee.vacations) {
                 const startDate = new Date(vacation.start);
+                startDate.setHours(0,0,0,0); // Normalize to start of day
                 const endDate = new Date(vacation.end);
-                // Set hours to 0 to compare only dates
-                startDate.setHours(0,0,0,0);
-                endDate.setHours(0,0,0,0);
-                currentDate.setHours(0,0,0,0);
+                endDate.setHours(0,0,0,0); // Normalize to start of day
 
                 if (currentDate >= startDate && currentDate <= endDate) {
                     return true;
@@ -621,7 +621,7 @@
 
                 // Define role order priority
                 const roleOrder = {
-                    'técnico': 1,
+                    'técnico enfermagem': 1, // Updated role name
                     'enfermeiro': 2,
                     'outro': 3
                 };
@@ -731,11 +731,8 @@
                     td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
 
                     if (isVacation(emp, currentYear, currentMonth, i)) {
-                        td.classList.add('vacation');
-                        td.textContent = 'FÉRIAS';
-                        // Merge cells for vacation if it's the start of a vacation block
-                        const nextDayIsVacation = isVacation(emp, currentYear, currentMonth, i + 1);
-                        const prevDayIsVacation = i > 1 && isVacation(emp, currentYear, currentMonth, i - 1); // Check prevDayIsVacation safely
+                        // Check if this is the start of a vacation block for merging
+                        const prevDayIsVacation = i > 1 && isVacation(emp, currentYear, currentMonth, i - 1);
 
                         if (!prevDayIsVacation) {
                             let span = 1;
@@ -745,6 +742,8 @@
                                 j++;
                             }
                             td.colSpan = span;
+                            td.classList.add('vacation');
+                            td.textContent = 'FÉRIAS';
                             tr.appendChild(td);
                             i += (span - 1); // Skip merged days
                         } else {
@@ -994,7 +993,12 @@
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                if (!isWeekend(currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i)) {
+                // Check for vacation on the specific day (important before applying month-wide siglas)
+                if (isVacation(employee, currentYear, currentMonth, i)) {
+                    continue; // Skip if it's a vacation day
+                }
+
+                if (!isWeekend(currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i)) {
                     // Preserve daily-only siglas if they were set for a specific day
                     const existingSiglas = employee.schedule[dateKey] || [];
                     const preservedSiglas = Array.isArray(existingSiglas) ? existingSiglas.filter(s => dailyOnlySiglas.includes(s)) : [];
@@ -1102,7 +1106,10 @@
             }
 
             const startDate = new Date(startDateStr);
+            startDate.setHours(0,0,0,0); // Normalize to start of day
             const endDate = new Date(endDateStr);
+            endDate.setHours(0,0,0,0); // Normalize to start of day
+
 
             if (startDate > endDate) {
                 window.showMessageBox('A data de início não pode ser posterior à data de fim.', 4000);
@@ -1113,7 +1120,7 @@
             if (employeeIndex === -1) return;
 
             const employee = employees[employeeIndex];
-            let tempDate = new Date(startDate);
+            let tempDate = new Date(startDate); // Use a new Date object for iteration
             let appliedCount = 0;
 
             while (tempDate <= endDate) {
@@ -1152,7 +1159,9 @@
             }
 
             const startDate = new Date(startDateStr);
+            startDate.setHours(0,0,0,0); // Normalize to start of day
             const endDate = new Date(endDateStr);
+            endDate.setHours(0,0,0,0); // Normalize to start of day
 
             if (startDate > endDate) {
                 window.showMessageBox('A data de início não pode ser posterior à data de fim.', 4000);
@@ -1214,7 +1223,10 @@
             }
 
             const startDate = new Date(vacationStart);
+            startDate.setHours(0,0,0,0); // Normalize to start of day
             const endDate = new Date(vacationEnd);
+            endDate.setHours(0,0,0,0); // Normalize to start of day
+
 
             if (startDate > endDate) {
                 window.showMessageBox('A data de início das férias não pode ser posterior à data de fim.', 4000);
@@ -1236,7 +1248,7 @@
             }
 
             // Add the new vacation period
-            employee.vacations.push({ start: vacationStart, end: vacationEnd });
+            employee.vacations.push({ start: vacationStart, end: vacationEnd }); // Store as YYYY-MM-DD strings
             saveEmployees();
             renderSchedule();
             window.showMessageBox('Férias aplicadas com sucesso!');
@@ -1412,8 +1424,6 @@
                                             let cellClasses = '';
 
                                             if (isVacation(emp, currentYear, currentMonth, i)) {
-                                                cellContent = 'FÉRIAS';
-                                                cellClasses = 'vacation';
                                                 // Check if this is the start of a vacation block for merging
                                                 const prevDayIsVacation = i > 1 && isVacation(emp, currentYear, currentMonth, i - 1);
                                                 if (!prevDayIsVacation) {
@@ -1423,6 +1433,8 @@
                                                         span++;
                                                         j++;
                                                     }
+                                                    cellContent = 'FÉRIAS';
+                                                    cellClasses = 'vacation';
                                                     rowHtml += `<td colspan="${span}" class="${cellClasses}">${cellContent}</td>`;
                                                     i += (span - 1); // Skip merged days
                                                 }
@@ -1469,9 +1481,29 @@
             printWindow.print();
         }
 
+        /**
+         * Adds a specified number of months to a given date, handling day overflows correctly
+         * (e.g., Jan 31 + 1 month becomes Feb 28/29, not Mar 2).
+         * @param {string} dateString - The date string (YYYY-MM-DD).
+         * @param {number} months - The number of months to add.
+         * @returns {Date} The new date object.
+         */
+        function addMonthsToDate(dateString, months) {
+            const date = new Date(dateString + 'T00:00:00'); // Use 'T00:00:00' to avoid timezone issues
+            const day = date.getDate();
+            date.setMonth(date.getMonth() + months);
+            // If the month rolled over due to day overflow (e.g., Jan 31 -> Feb 28 -> Mar 2),
+            // set it to the last day of the target month.
+            if (date.getDate() !== day) {
+                date.setDate(0); // This sets it to the last day of the *previous* month.
+                date.setMonth(date.getMonth() + 1); // Then advance to the correct month.
+            }
+            return date;
+        }
+
         // --- New: Function to copy schedule to next month ---
         function copyScheduleToNextMonth() {
-            if (!confirm('Tem certeza que deseja transcrever a escala do mês atual para o próximo mês? Isso substituirá a escala existente no próximo mês (exceto feriados e fins de semana, e férias já planejadas).')) {
+            if (!confirm('Tem certeza que deseja transcrever a escala do mês atual para o próximo mês? Isso substituirá a escala existente no próximo mês.')) {
                 return;
             }
 
@@ -1480,32 +1512,15 @@
             const daysInNextMonth = getDaysInMonth(nextYear, nextMonth);
 
             employees.forEach(emp => {
-                // Prepare new schedule and vacations for the next month
                 const newSchedule = {};
                 const newVacations = [];
 
-                // Copy existing vacations, shifted to the next month
+                // Copy and shift existing vacations to the next month
                 if (emp.vacations) {
                     emp.vacations.forEach(vac => {
-                        const startDate = new Date(vac.start);
-                        const endDate = new Date(vac.end);
-
-                        // Shift dates to next month/year
-                        const newStartDate = new Date(startDate);
-                        newStartDate.setMonth(newStartDate.getMonth() + 1);
-                        if (newStartDate.getMonth() !== nextMonth) { // Handle year rollover for dates that jump
-                            newStartDate.setFullYear(newStartDate.getFullYear() + (nextMonth > newStartDate.getMonth() ? 0 : 1));
-                            newStartDate.setMonth(nextMonth);
-                        }
-
-                        const newEndDate = new Date(endDate);
-                        newEndDate.setMonth(newEndDate.getMonth() + 1);
-                        if (newEndDate.getMonth() !== nextMonth) { // Handle year rollover for dates that jump
-                            newEndDate.setFullYear(newEndDate.getFullYear() + (nextMonth > newEndDate.getMonth() ? 0 : 1));
-                            newEndDate.setMonth(nextMonth);
-                        }
-
-
+                        const newStartDate = addMonthsToDate(vac.start, 1);
+                        const newEndDate = addMonthsToDate(vac.end, 1);
+                        
                         newVacations.push({
                             start: newStartDate.toISOString().split('T')[0],
                             end: newEndDate.toISOString().split('T')[0]
@@ -1513,7 +1528,7 @@
                     });
                 }
 
-                // Copy daily schedule, filtering out weekends, holidays, and new vacations
+                // Copy daily schedule (siglas) regardless of weekend/holiday status in target month
                 if (emp.schedule) {
                     for (let i = 1; i <= getDaysInMonth(currentYear, currentMonth); i++) {
                         const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -1523,6 +1538,7 @@
                             // Calculate the corresponding day in the next month
                             const nextMonthDate = new Date(currentYear, currentMonth, i); // Use current date to calc next month's day
                             nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+                            nextMonthDate.setHours(0,0,0,0); // Normalize
 
                             // Ensure day exists in next month (e.g., Feb 30 -> Mar 2)
                             const maxDaysInNextMonth = getDaysInMonth(nextMonthDate.getFullYear(), nextMonthDate.getMonth());
@@ -1533,23 +1549,8 @@
 
                             const nextMonthDateKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
 
-                            // Check if the target day in the next month is a weekend, holiday, or new vacation
-                            const isNextDayWeekend = isWeekend(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), targetDay);
-                            const isNextDayHoliday = isHoliday(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), targetDay);
-                            const isNextDayVacation = newVacations.some(vac => {
-                                const tempDate = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), targetDay);
-                                tempDate.setHours(0,0,0,0);
-                                const vStart = new Date(vac.start);
-                                vStart.setHours(0,0,0,0);
-                                const vEnd = new Date(vac.end);
-                                vEnd.setHours(0,0,0,0);
-                                return tempDate >= vStart && tempDate <= vEnd;
-                            });
-
-                            if (!isNextDayWeekend && !isNextDayHoliday && !isNextDayVacation) {
-                                // Only copy if the target day is not a weekend, holiday, or vacation
-                                newSchedule[nextMonthDateKey] = Array.isArray(siglasForCurrentDay) ? [...siglasForCurrentDay] : [siglasForCurrentDay];
-                            }
+                            // Copy directly, no checks for weekends/holidays/vacations in target month here for siglas
+                            newSchedule[nextMonthDateKey] = Array.isArray(siglasForCurrentDay) ? [...siglasForCurrentDay] : [siglasForCurrentDay];
                         }
                     }
                 }
