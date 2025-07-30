@@ -492,7 +492,8 @@
                 setDoc(docRef, { data: JSON.stringify(employees) })
                     .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
             } else {
-                localStorage.setItem('healthScheduleEmployeesMaster', JSON.stringify(employees));
+                console.warn("Firebase não disponível. Funcionários não serão salvos.");
+                window.showMessageBox("Firebase não disponível. Funcionários não serão salvos.", 5000);
             }
         }
 
@@ -508,11 +509,13 @@
                     }
                 } catch (error) {
                     console.error("Erro ao carregar funcionários do Firestore:", error);
-                    employees = [];
+                    employees = []; // Ensure employees is an empty array on error
+                    window.showMessageBox(`Erro ao carregar funcionários: ${error.message}`, 5000);
                 }
             } else {
-                const storedEmployees = localStorage.getItem('healthScheduleEmployeesMaster');
-                employees = storedEmployees ? JSON.parse(storedEmployees) : [];
+                console.warn("Firebase não disponível. Funcionários não serão carregados.");
+                window.showMessageBox("Firebase não disponível. Funcionários não serão carregados.", 5000);
+                employees = []; // Ensure employees is an empty array if Firebase not available
             }
             renderEmployeeList();
             // renderSchedule will be called after monthly schedules are loaded
@@ -520,13 +523,13 @@
 
         // NEW: Save current month's schedule data
         function saveCurrentMonthSchedule() {
-            const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
             if (userId && db) {
                 const docRef = doc(db, `artifacts/${appId}/users/${userId}/health_schedule_data`, 'monthly_schedules');
                 setDoc(docRef, { data: JSON.stringify(monthlySchedulesData) })
                     .catch(error => console.error("Erro ao salvar escalas mensais no Firestore:", error));
             } else {
-                localStorage.setItem('healthScheduleMonthlySchedules', JSON.stringify(monthlySchedulesData));
+                console.warn("Firebase não disponível. Escalas mensais não serão salvas.");
+                window.showMessageBox("Firebase não disponível. Escalas mensais não serão salvas.", 5000);
             }
         }
 
@@ -543,11 +546,13 @@
                     }
                 } catch (error) {
                     console.error("Erro ao carregar escalas mensais do Firestore:", error);
-                    monthlySchedulesData = {};
+                    monthlySchedulesData = {}; // Ensure empty on error
+                    window.showMessageBox(`Erro ao carregar escalas: ${error.message}`, 5000);
                 }
             } else {
-                const storedSchedules = localStorage.getItem('healthScheduleMonthlySchedules');
-                monthlySchedulesData = storedSchedules ? JSON.parse(storedSchedules) : {};
+                console.warn("Firebase não disponível. Escalas mensais não serão carregadas.");
+                window.showMessageBox("Firebase não disponível. Escalas mensais não serão carregadas.", 5000);
+                monthlySchedulesData = {}; // Ensure empty if Firebase not available
             }
             renderSchedule(); // Render schedule after monthly data is loaded
         }
@@ -560,7 +565,8 @@
                 setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
                     .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
             } else {
-                localStorage.setItem('healthScheduleObservations', JSON.stringify(monthlyObservations));
+                console.warn("Firebase não disponível. Observações não serão salvas.");
+                window.showMessageBox("Firebase não disponível. Observações não serão salvas.", 5000);
             }
         }
 
@@ -576,11 +582,13 @@
                     }
                 } catch (error) {
                     console.error("Erro ao carregar observações do Firestore:", error);
-                    monthlyObservations = {};
+                    monthlyObservations = {}; // Ensure empty on error
+                    window.showMessageBox(`Erro ao carregar observações: ${error.message}`, 5000);
                 }
             } else {
-                const storedObservations = localStorage.getItem('healthScheduleObservations');
-                monthlyObservations = storedObservations ? JSON.parse(storedObservations) : {};
+                console.warn("Firebase não disponível. Observações não serão carregadas.");
+                window.showMessageBox("Firebase não disponível. Observações não serão carregadas.", 5000);
+                monthlyObservations = {}; // Ensure empty if Firebase not available
             }
             const key = `${currentYear}-${currentMonth + 1}`;
             document.getElementById('monthlyObservations').value = monthlyObservations[key] || '';
@@ -593,7 +601,8 @@
                 setDoc(docRef, { data: JSON.stringify(customSiglas) })
                     .catch(error => console.error("Erro ao salvar siglas personalizadas no Firestore:", error));
             } else {
-                localStorage.setItem('healthScheduleCustomSiglas', JSON.stringify(customSiglas));
+                console.warn("Firebase não disponível. Siglas personalizadas não serão salvas.");
+                window.showMessageBox("Firebase não disponível. Siglas personalizadas não serão salvas.", 5000);
             }
         }
 
@@ -610,11 +619,13 @@
                     }
                 } catch (error) {
                     console.error("Erro ao carregar siglas personalizadas do Firestore:", error);
-                    customSiglas = [];
+                    customSiglas = []; // Ensure empty on error
+                    window.showMessageBox(`Erro ao carregar siglas personalizadas: ${error.message}`, 5000);
                 }
             } else {
-                const storedSiglas = localStorage.getItem('healthScheduleCustomSiglas');
-                customSiglas = storedSiglas ? JSON.parse(storedSiglas) : [];
+                console.warn("Firebase não disponível. Siglas personalizadas não serão carregadas.");
+                window.showMessageBox("Firebase não disponível. Siglas personalizadas não serão carregadas.", 5000);
+                customSiglas = []; // Ensure empty if Firebase not available
             }
             renderSiglaCheckboxes(); // Render checkboxes in sigla/vacation modal
             renderCustomSiglasList(); // Render list in manage siglas modal
@@ -622,6 +633,10 @@
 
         // New function to save both employees and observations and siglas
         function saveAllData() {
+            if (!userId || !db) {
+                window.showMessageBox("Firebase não disponível. Não foi possível salvar os dados.", 5000);
+                return;
+            }
             saveEmployees(); // Save active employee list
             saveCurrentMonthSchedule(); // Save current month's schedule data
             saveMonthlyObservations();
@@ -1753,37 +1768,39 @@
                                 }
                             } catch (error) {
                                 console.error("Erro ao autenticar no Firebase:", error);
-                                window.showMessageBox(`Erro de autenticação: ${error.message}`, 5000);
-                                // Fallback to a random UUID if anonymous sign-in fails
-                                userId = crypto.randomUUID();
+                                window.showMessageBox(`Erro de autenticação: ${error.message}. Os dados podem não ser salvos.`, 7000);
+                                userId = null; // Ensure userId is null if auth fails
                             }
                         }
                         isAuthReady = true;
-                        // Load data only after auth is ready and userId is set
-                        await loadEmployees(); // Load master employee list first
-                        await loadMonthlySchedulesData(); // Then load monthly schedule data
-                        await loadMonthlyObservations();
-                        await loadCustomSiglas(); // Load custom siglas
+                        // Load data only after auth is ready and userId is set (or null if auth failed)
+                        if (userId && db) { // Only load if Firebase is truly ready and user is authenticated
+                            await loadEmployees(); // Load master employee list first
+                            await loadMonthlySchedulesData(); // Then load monthly schedule data
+                            await loadMonthlyObservations();
+                            await loadCustomSiglas(); // Load custom siglas
+                        } else {
+                            window.showMessageBox("Firebase não configurado ou autenticação falhou. Os dados não serão salvos/carregados.", 7000);
+                        }
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase:", error);
-                    window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Usando armazenamento local.`, 7000);
-                    // Fallback to localStorage if Firebase initialization fails
-                    userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
-                    isAuthReady = true;
-                    await loadEmployees();
-                    await loadMonthlySchedulesData();
-                    await loadMonthlyObservations();
-                    await loadCustomSiglas(); // Load custom siglas
+                    window.showMessageBox(`Erro ao inicializar o Firebase: ${error.message}. Os dados não serão salvos/carregados.`, 7000);
+                    // If Firebase initialization itself fails, ensure userId and db are null
+                    db = null;
+                    auth = null;
+                    userId = null;
+                    isAuthReady = true; // Still set to true so the app proceeds, but without Firebase
+                    renderCurrentMonthYear(); // Render basic UI even without data
                 }
             } else {
-                // If no Firebase config, proceed with localStorage
-                userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
+                console.warn("Nenhuma configuração do Firebase fornecida. Os dados não serão salvos/carregados.");
+                window.showMessageBox("Nenhuma configuração do Firebase fornecida. Os dados não serão salvos/carregados.", 7000);
+                db = null;
+                auth = null;
+                userId = null;
                 isAuthReady = true;
-                await loadEmployees();
-                await loadMonthlySchedulesData();
-                await loadMonthlyObservations();
-                await loadCustomSiglas(); // Load custom siglas
+                renderCurrentMonthYear(); // Render basic UI even without data
             }
 
             // Event listener for custom role field
