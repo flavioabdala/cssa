@@ -83,7 +83,7 @@
             padding: 2rem;
             border-radius: 1rem;
             width: 90%;
-            max-width: 600px;
+            max-width: 900px; /* Increased max-width to accommodate new section */
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             position: relative;
         }
@@ -113,6 +113,7 @@
             padding: 0.5rem;
             text-align: center;
             white-space: nowrap; /* Prevent text wrapping in cells */
+            font-size: 0.8rem; /* Smaller font for general view */
         }
         .schedule-table th {
             background-color: #e2e8f0; /* Light gray header */
@@ -138,7 +139,7 @@
             border: 1px solid #000;
             padding: 4px;
             text-align: center;
-            font-size: 10px;
+            font-size: 8px; /* Even smaller font for print */
         }
         .printable-table .weekend, .printable-table .holiday {
             background-color: #ccc;
@@ -153,13 +154,7 @@
             padding-top: 10px;
         }
 
-        /* Team Colors */
-        .team-sol { background-color: #FFD700; color: #333; } /* Gold */
-        .team-verde { background-color: #32CD32; color: white; } /* LimeGreen */
-        .team-vermelha { background-color: #FF4500; color: white; } /* OrangeRed */
-        .team-azul { background-color: #1E90FF; color: white; } /* DodgerBlue */
-        .team-laranja { background-color: #FFA500; color: #333; } /* Orange */
-        .team-apoio { background-color: #D3D3D3; color: #333; } /* LightGray */
+        /* Removed team colors to be applied directly to name cells */
 
 
         @media print {
@@ -290,6 +285,7 @@
             <button id="printScheduleBtn" class="btn-primary">Imprimir Escala</button>
             <button id="saveScheduleBtn" class="btn-primary">Salvar Escala</button>
             <button id="manageSiglasBtn" class="btn-secondary">Gerenciar Siglas</button>
+            <button id="copyScheduleBtn" class="btn-secondary">Transcrever Escala p/ Próximo Mês</button>
         </div>
     </div>
 
@@ -298,8 +294,7 @@
             <button class="close-button" onclick="window.closeSiglaVacationModal()">&times;</button>
             <h3 id="modalEmployeeName" class="text-2xl font-bold mb-4 text-blue-700"></h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div id="siglaSectionMonth" class="bg-gray-50 p-4 rounded-lg shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> <div id="siglaSectionMonth" class="bg-gray-50 p-4 rounded-lg shadow-sm">
                     <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o Mês</h4>
                     <div class="mb-4 space-y-2" id="siglaCheckboxesMonth">
                         <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="F" class="mr-2"> F (Farmácia)</label>
@@ -325,6 +320,31 @@
                     <button id="applySiglaDayBtn" class="btn-primary w-full">Aplicar Sigla(s) para o Dia</button>
                     <button id="clearSiglasDayBtn" class="btn-secondary w-full mt-2">Limpar Siglas do Dia</button>
                 </div>
+
+                <div id="multiDaySiglaSection" class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar LM / FO por Período</h4>
+                    <div class="mb-4 space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="multiDaySiglaType" value="LM" class="form-radio text-blue-600" checked>
+                            <span class="ml-2">LM (Licença Médica)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="multiDaySiglaType" value="FO" class="form-radio text-blue-600">
+                            <span class="ml-2">FO (Folga)</span>
+                        </label>
+                    </div>
+                    <div class="mb-4">
+                        <label for="multiDaySiglaStart" class="block text-sm font-medium text-gray-700 mb-1">Início:</label>
+                        <input type="date" id="multiDaySiglaStart" class="input-field">
+                    </div>
+                    <div class="mb-4">
+                        <label for="multiDaySiglaEnd" class="block text-sm font-medium text-gray-700 mb-1">Fim:</label>
+                        <input type="date" id="multiDaySiglaEnd" class="input-field">
+                    </div>
+                    <button id="applyMultiDaySiglaBtn" class="btn-primary w-full">Aplicar Período</button>
+                    <button id="clearMultiDaySiglaRangeBtn" class="btn-secondary w-full mt-2">Limpar Período</button>
+                </div>
+
 
                 <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
                     <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Férias</h4>
@@ -407,8 +427,8 @@
             { name: 'T', description: 'Totem' },
             { name: 'C', description: 'Consultórios' }
         ];
-        // Siglas that can only be applied per day (not generally for the month)
-        const dailyOnlySiglas = ['FO', 'LM']; 
+        // Siglas that can only be applied per day (not generally for the month) or as ranges
+        const dailyOnlySiglas = ['FO', 'LM'];
         let customSiglas = []; // Array to store user-defined siglas
 
         // Brazilian National Holidays (example for 2025)
@@ -585,42 +605,55 @@
             return false;
         }
 
+        /**
+         * Extracts the hour from a work shift string (e.g., "08h-17h" -> 8).
+         * Returns -1 if unable to parse.
+         */
+        function parseWorkShiftHour(workShift) {
+            const match = workShift.match(/^(\d{2})h/);
+            return match ? parseInt(match[1], 10) : -1;
+        }
+
+        function sortEmployeesByRole(empArray) {
+            return [...empArray].sort((a, b) => {
+                const roleA = a.role.toLowerCase();
+                const roleB = b.role.toLowerCase();
+
+                // Define role order priority
+                const roleOrder = {
+                    'técnico': 1,
+                    'enfermeiro': 2,
+                    'outro': 3
+                };
+
+                const orderA = roleOrder[roleA] || 99; // Default to a high number for unknown roles
+                const orderB = roleOrder[roleB] || 99;
+
+                if (orderA !== orderB) {
+                    return orderA - orderB;
+                }
+
+                // If roles are the same, sort by work shift hour
+                const hourA = parseWorkShiftHour(a.workShift || '');
+                const hourB = parseWorkShiftHour(b.workShift || '');
+
+                if (hourA !== hourB) {
+                    // Treat unparseable hours as last
+                    if (hourA === -1 && hourB !== -1) return 1;
+                    if (hourA !== -1 && hourB === -1) return -1;
+                    return hourA - hourB;
+                }
+
+                // If roles and hours are the same, sort by name
+                return a.name.localeCompare(b.name);
+            });
+        }
+
         // --- Render Functions ---
 
         function renderCurrentMonthYear() {
             const date = new Date(currentYear, currentMonth);
             document.getElementById('currentMonthYear').textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
-        }
-
-        function getTeamColorClass(team) {
-            switch (team) {
-                case 'Sol': return 'team-sol';
-                case 'Verde': return 'team-verde';
-                case 'Vermelha': return 'team-vermelha';
-                case 'Azul': return 'team-azul';
-                case 'Laranja': return 'team-laranja';
-                case 'Apoio': return 'team-apoio';
-                default: return '';
-            }
-        }
-
-        function sortEmployeesByRole(empArray) {
-            // Sort by role: Técnicos first, then Enfermeiros, then others alphabetically
-            return [...empArray].sort((a, b) => {
-                const roleA = a.role.toLowerCase();
-                const roleB = b.role.toLowerCase();
-
-                // Prioritize "Técnico"
-                if (roleA.includes('técnico') && !roleB.includes('técnico')) return -1;
-                if (!roleA.includes('técnico') && roleB.includes('técnico')) return 1;
-
-                // Then "Enfermeiro"
-                if (roleA.includes('enfermeiro') && !roleB.includes('enfermeiro')) return -1;
-                if (!roleA.includes('enfermeiro') && roleB.includes('enfermeiro')) return 1;
-
-                // Finally, sort by name for other roles or same role type
-                return a.name.localeCompare(b.name);
-            });
         }
 
         function renderEmployeeList() {
@@ -635,13 +668,12 @@
 
             sortedEmployees.forEach(emp => {
                 const li = document.createElement('li');
-                const teamColorClass = getTeamColorClass(emp.team);
                 li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
                 li.innerHTML = `
                     <div class="flex-grow">
                         <span class="font-medium text-blue-600 cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
                         <span class="text-sm text-gray-500 ml-2">(${emp.role} - ${emp.council} - ${emp.workShift})</span>
-                        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${teamColorClass} ml-2">${emp.team}</span>
+                        <span class="text-sm text-gray-500 ml-2">(Equipe: ${emp.team})</span>
                         <span class="text-xs text-gray-400 block break-all">ID: ${emp.id}</span>
                     </div>
                     <div>
@@ -683,10 +715,10 @@
             // Add employee rows
             sortedEmployees.forEach(emp => {
                 const tr = document.createElement('tr');
-                const teamColorClass = getTeamColorClass(emp.team);
+                // Removed teamColorClass from here
                 tr.innerHTML = `
-                    <td class="font-medium text-blue-600 cursor-pointer ${teamColorClass}" onclick="window.openSiglaVacationModal('${emp.id}')">
-                        ${emp.name} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${emp.team}</span>
+                    <td class="font-medium text-blue-600 cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">
+                        ${emp.name}
                     </td>
                     <td>${emp.role}</td>
                     <td>${emp.council}</td>
@@ -703,9 +735,9 @@
                         td.textContent = 'FÉRIAS';
                         // Merge cells for vacation if it's the start of a vacation block
                         const nextDayIsVacation = isVacation(emp, currentYear, currentMonth, i + 1);
-                        const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
+                        const prevDayIsVacation = i > 1 && isVacation(emp, currentYear, currentMonth, i - 1); // Check prevDayIsVacation safely
 
-                        if (!prevDayIsVacation && isVacation(emp, currentYear, currentMonth, i)) {
+                        if (!prevDayIsVacation) {
                             let span = 1;
                             let j = i + 1;
                             while (j <= daysInMonth && isVacation(emp, currentYear, currentMonth, j)) {
@@ -715,10 +747,9 @@
                             td.colSpan = span;
                             tr.appendChild(td);
                             i += (span - 1); // Skip merged days
-                        } else if (prevDayIsVacation && isVacation(emp, currentYear, currentMonth, i)) {
-                            // Do nothing, this cell was already merged
                         } else {
-                            tr.appendChild(td);
+                            // If it's a continuation of vacation, this cell should be skipped
+                            // The loop will advance 'i' correctly when the 'td' is appended
                         }
                     } else {
                         // Display multiple siglas joined by comma
@@ -740,14 +771,15 @@
             const siglaCheckboxesMonthDiv = document.getElementById('siglaCheckboxesMonth');
             const siglaCheckboxesDayDiv = document.getElementById('siglaCheckboxesDay');
 
-            // Clear existing non-fixed checkboxes
+            // Clear existing checkboxes
             siglaCheckboxesMonthDiv.innerHTML = '';
             siglaCheckboxesDayDiv.innerHTML = '';
 
-            // Combine default and custom siglas for the month checkboxes
-            const allSiglasForMonth = [...defaultSiglas, ...customSiglas];
-            allSiglasForMonth.forEach(sigla => {
-                // Only add to month section if it's not a "daily only" sigla (like FO/LM)
+            // Combine default and custom siglas
+            const allPossibleSiglas = [...defaultSiglas, ...customSiglas];
+
+            // Render for Month Section (excluding daily-only siglas)
+            allPossibleSiglas.forEach(sigla => {
                 if (!dailyOnlySiglas.includes(sigla.name)) {
                     const label = document.createElement('label');
                     label.className = 'flex items-center';
@@ -756,28 +788,27 @@
                 }
             });
 
-            // Add fixed FO/LM to day section
-            const foLabel = document.createElement('label');
-            foLabel.className = 'flex items-center';
-            foLabel.innerHTML = `<input type="checkbox" name="siglaDay" value="FO" class="mr-2"> FO (Folga)`;
-            siglaCheckboxesDayDiv.appendChild(foLabel);
-
-            const lmLabel = document.createElement('label');
-            lmLabel.className = 'flex items-center';
-            lmLabel.innerHTML = `<input type="checkbox" name="siglaDay" value="LM" class="mr-2"> LM (Licença Médica)`;
-            siglaCheckboxesDayDiv.appendChild(lmLabel);
-
-            // Add other siglas to day section
-            const allSiglasForDay = [...defaultSiglas, ...customSiglas];
-            allSiglasForDay.forEach(sigla => {
-                // Do not re-add FO/LM as they are already hardcoded for day
-                if (!dailyOnlySiglas.includes(sigla.name)) {
-                    const label = document.createElement('label');
-                    label.className = 'flex items-center';
-                    label.innerHTML = `<input type="checkbox" name="siglaDay" value="${sigla.name}" class="mr-2"> ${sigla.name} (${sigla.description})`;
-                    siglaCheckboxesDayDiv.appendChild(label);
-                }
+            // Render for Day Section (including all siglas)
+            allPossibleSiglas.forEach(sigla => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center';
+                label.innerHTML = `<input type="checkbox" name="siglaDay" value="${sigla.name}" class="mr-2"> ${sigla.name} (${sigla.description})`;
+                siglaCheckboxesDayDiv.appendChild(label);
             });
+
+            // Explicitly add FO/LM to Day Section if they are not in allPossibleSiglas (should be, but as a safeguard)
+            if (!allPossibleSiglas.some(s => s.name === 'FO')) {
+                const foLabel = document.createElement('label');
+                foLabel.className = 'flex items-center';
+                foLabel.innerHTML = `<input type="checkbox" name="siglaDay" value="FO" class="mr-2"> FO (Folga)`;
+                siglaCheckboxesDayDiv.appendChild(foLabel);
+            }
+            if (!allPossibleSiglas.some(s => s.name === 'LM')) {
+                const lmLabel = document.createElement('label');
+                lmLabel.className = 'flex items-center';
+                lmLabel.innerHTML = `<input type="checkbox" name="siglaDay" value="LM" class="mr-2"> LM (Licença Médica)`;
+                siglaCheckboxesDayDiv.appendChild(lmLabel);
+            }
         }
 
 
@@ -863,12 +894,17 @@
             if (employee) {
                 document.getElementById('modalEmployeeName').textContent = `Editar Escala de: ${employee.name}`;
                 document.getElementById('siglaVacationModal').classList.remove('hidden');
+
                 // Reset form fields
                 document.getElementById('vacationStart').value = '';
                 document.getElementById('vacationEnd').value = '';
+                document.getElementById('multiDaySiglaStart').value = '';
+                document.getElementById('multiDaySiglaEnd').value = '';
+                document.querySelector('input[name="multiDaySiglaType"][value="LM"]').checked = true; // Default to LM
 
                 const siglaSectionMonth = document.getElementById('siglaSectionMonth');
                 const siglaSectionDay = document.getElementById('siglaSectionDay');
+                const multiDaySiglaSection = document.getElementById('multiDaySiglaSection'); // Get new section element
                 const modalDayNumber = document.getElementById('modalDayNumber');
 
                 // Re-render checkboxes to ensure custom siglas are included
@@ -878,7 +914,11 @@
                     // Editing a specific day
                     siglaSectionMonth.classList.add('hidden');
                     siglaSectionDay.classList.remove('hidden');
+                    multiDaySiglaSection.classList.remove('hidden'); // Always show multi-day section
+
                     modalDayNumber.textContent = currentEditingDateKey.split('-')[2]; // Extract day number
+                    document.getElementById('multiDaySiglaStart').value = currentEditingDateKey; // Pre-fill multi-day dates
+                    document.getElementById('multiDaySiglaEnd').value = currentEditingDateKey;
 
                     // Pre-check siglas for the specific day
                     const checkboxesDay = document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]');
@@ -891,19 +931,17 @@
                             if (checkbox) {
                                 checkbox.checked = true;
                             }
+                            // Also pre-select LM/FO radio if present
+                            if (sigla === 'LM' || sigla === 'FO') {
+                                document.querySelector(`input[name="multiDaySiglaType"][value="${sigla}"]`).checked = true;
+                            }
                         });
-                    } else if (typeof siglasForDay === 'string' && siglasForDay !== '') {
-                        // Handle old string format: treat as a single sigla
-                        const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${siglasForDay}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
                     }
-
                 } else {
                     // Editing general monthly schedule (from employee name click)
                     siglaSectionMonth.classList.remove('hidden');
                     siglaSectionDay.classList.add('hidden');
+                    multiDaySiglaSection.classList.remove('hidden'); // Always show multi-day section
 
                     // Clear and pre-check siglas based on current month's schedule for this employee
                     const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]');
@@ -1013,8 +1051,17 @@
 
             const employee = employees[employeeIndex];
 
-            // For single day, we can overwrite or combine if desired. For FO/LM, usually overwrite.
-            // Let's assume for single day, we replace existing siglas with selected ones.
+            // For single day, we replace existing siglas with selected ones, but don't overwrite if it's a vacation
+            const dateParts = currentEditingDateKey.split('-');
+            const year = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+            const day = parseInt(dateParts[2]);
+
+            if (isVacation(employee, year, month, day)) {
+                window.showMessageBox('Não é possível aplicar siglas em um dia de férias.', 3000);
+                return;
+            }
+
             employee.schedule[currentEditingDateKey] = selectedSiglas;
 
             saveEmployees();
@@ -1041,6 +1088,119 @@
                 window.showMessageBox(`Siglas para o dia ${currentEditingDateKey.split('-')[2]} limpas.`);
                 window.closeSiglaVacationModal();
             }
+        }
+
+        // NEW: Function to apply LM/FO over a period
+        function applyMultiDaySigla() {
+            const multiDaySiglaType = document.querySelector('input[name="multiDaySiglaType"]:checked').value;
+            const startDateStr = document.getElementById('multiDaySiglaStart').value;
+            const endDateStr = document.getElementById('multiDaySiglaEnd').value;
+
+            if (!startDateStr || !endDateStr) {
+                window.showMessageBox('Por favor, selecione as datas de início e fim para a LM/FO.', 4000);
+                return;
+            }
+
+            const startDate = new Date(startDateStr);
+            const endDate = new Date(endDateStr);
+
+            if (startDate > endDate) {
+                window.showMessageBox('A data de início não pode ser posterior à data de fim.', 4000);
+                return;
+            }
+
+            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
+            if (employeeIndex === -1) return;
+
+            const employee = employees[employeeIndex];
+            let tempDate = new Date(startDate);
+            let appliedCount = 0;
+
+            while (tempDate <= endDate) {
+                const year = tempDate.getFullYear();
+                const month = tempDate.getMonth();
+                const day = tempDate.getDate();
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                if (!isVacation(employee, year, month, day)) {
+                    // Overwrite existing siglas for this day, but not if it's a vacation
+                    employee.schedule[dateKey] = [multiDaySiglaType];
+                    appliedCount++;
+                }
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+
+            saveEmployees();
+            renderSchedule();
+            if (appliedCount > 0) {
+                window.showMessageBox(`${multiDaySiglaType} aplicada para ${appliedCount} dia(s) no período.`);
+            } else {
+                window.showMessageBox(`Nenhum dia de ${multiDaySiglaType} aplicado, pois todos os dias no período são férias.`);
+            }
+            window.closeSiglaVacationModal();
+        }
+
+        // NEW: Function to clear LM/FO over a period
+        function clearMultiDaySiglaRange() {
+            const multiDaySiglaType = document.querySelector('input[name="multiDaySiglaType"]:checked').value;
+            const startDateStr = document.getElementById('multiDaySiglaStart').value;
+            const endDateStr = document.getElementById('multiDaySiglaEnd').value;
+
+            if (!startDateStr || !endDateStr) {
+                window.showMessageBox('Por favor, selecione as datas de início e fim para limpar a LM/FO.', 4000);
+                return;
+            }
+
+            const startDate = new Date(startDateStr);
+            const endDate = new Date(endDateStr);
+
+            if (startDate > endDate) {
+                window.showMessageBox('A data de início não pode ser posterior à data de fim.', 4000);
+                return;
+            }
+
+            if (!confirm(`Tem certeza que deseja limpar a sigla "${multiDaySiglaType}" para o período selecionado?`)) {
+                return;
+            }
+
+            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
+            if (employeeIndex === -1) return;
+
+            const employee = employees[employeeIndex];
+            let tempDate = new Date(startDate);
+            let clearedCount = 0;
+
+            while (tempDate <= endDate) {
+                const year = tempDate.getFullYear();
+                const month = tempDate.getMonth();
+                const day = tempDate.getDate();
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                if (employee.schedule && employee.schedule[dateKey]) {
+                    const existingSiglas = Array.isArray(employee.schedule[dateKey]) ? employee.schedule[dateKey] : [employee.schedule[dateKey]];
+                    const newSiglas = existingSiglas.filter(s => s !== multiDaySiglaType);
+
+                    if (newSiglas.length !== existingSiglas.length) { // Only increment if something was actually removed
+                        clearedCount++;
+                    }
+
+                    if (newSiglas.length === 0) {
+                        delete employee.schedule[dateKey];
+                    } else {
+                        employee.schedule[dateKey] = newSiglas;
+                    }
+                }
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+
+            saveEmployees();
+            renderSchedule();
+            if (clearedCount > 0) {
+                window.showMessageBox(`${multiDaySiglaType} limpa para ${clearedCount} dia(s) no período.`);
+            } else {
+                window.showMessageBox(`Nenhum dia de ${multiDaySiglaType} encontrado ou limpo no período.`);
+            }
+            window.closeSiglaVacationModal();
         }
 
 
@@ -1071,7 +1231,7 @@
             let tempDate = new Date(startDate);
             while (tempDate <= endDate) {
                 const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
-                delete employee.schedule[dateKey];
+                delete employee.schedule[dateKey]; // Vacations overwrite any other siglas
                 tempDate.setDate(tempDate.getDate() + 1);
             }
 
@@ -1088,12 +1248,15 @@
             if (employeeIndex === -1) return;
 
             const employee = employees[employeeIndex];
-            employee.vacations = []; // Clear all vacations for this employee
+            
+            if (confirm('Tem certeza que deseja limpar TODAS as férias deste funcionário?')) {
+                employee.vacations = []; // Clear all vacations for this employee
 
-            saveEmployees();
-            renderSchedule();
-            window.showMessageBox('Férias do funcionário limpas.');
-            window.closeSiglaVacationModal();
+                saveEmployees();
+                renderSchedule();
+                window.showMessageBox('Férias do funcionário limpas.');
+                window.closeSiglaVacationModal();
+            }
         }
 
         function clearEmployeeSchedule() {
@@ -1180,7 +1343,7 @@
                             border: 1px solid #000;
                             padding: 4px;
                             text-align: center;
-                            font-size: 10px;
+                            font-size: 8px; /* Even smaller font for print */
                             white-space: normal; /* Allow wrapping for print */
                             word-break: break-word; /* Break long words */
                         }
@@ -1194,14 +1357,7 @@
                             padding-top: 10px;
                             page-break-before: avoid; /* Avoid breaking page before legend */
                         }
-                        /* Team Colors for Print */
-                        .team-sol-print { background-color: #FFD700; color: #333; }
-                        .team-verde-print { background-color: #32CD32; color: white; }
-                        .team-vermelha-print { background-color: #FF4500; color: white; }
-                        .team-azul-print { background-color: #1E90FF; color: white; }
-                        .team-laranja-print { background-color: #FFA500; color: #333; }
-                        .team-apoio-print { background-color: #D3D3D3; color: #333; }
-
+                        /* Removed team colors for print */
 
                         /* Column widths for print */
                         .printable-table th:nth-child(1) { width: 12%; } /* Nome */
@@ -1242,8 +1398,8 @@
                                 <tbody>
                                     ${sortEmployeesByRole(employees).map(emp => {
                                         let rowHtml = `<tr>
-                                            <td class="font-medium ${getTeamColorClass(emp.team)}-print">
-                                                ${emp.name} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${emp.team}</span>
+                                            <td class="font-medium">
+                                                ${emp.name}
                                             </td>
                                             <td>${emp.role}</td>
                                             <td>${emp.council}</td>
@@ -1259,7 +1415,7 @@
                                                 cellContent = 'FÉRIAS';
                                                 cellClasses = 'vacation';
                                                 // Check if this is the start of a vacation block for merging
-                                                const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
+                                                const prevDayIsVacation = i > 1 && isVacation(emp, currentYear, currentMonth, i - 1);
                                                 if (!prevDayIsVacation) {
                                                     let span = 1;
                                                     let j = i + 1;
@@ -1311,6 +1467,107 @@
             printWindow.document.close();
             printWindow.focus();
             printWindow.print();
+        }
+
+        // --- New: Function to copy schedule to next month ---
+        function copyScheduleToNextMonth() {
+            if (!confirm('Tem certeza que deseja transcrever a escala do mês atual para o próximo mês? Isso substituirá a escala existente no próximo mês (exceto feriados e fins de semana, e férias já planejadas).')) {
+                return;
+            }
+
+            const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+            const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+            const daysInNextMonth = getDaysInMonth(nextYear, nextMonth);
+
+            employees.forEach(emp => {
+                // Prepare new schedule and vacations for the next month
+                const newSchedule = {};
+                const newVacations = [];
+
+                // Copy existing vacations, shifted to the next month
+                if (emp.vacations) {
+                    emp.vacations.forEach(vac => {
+                        const startDate = new Date(vac.start);
+                        const endDate = new Date(vac.end);
+
+                        // Shift dates to next month/year
+                        const newStartDate = new Date(startDate);
+                        newStartDate.setMonth(newStartDate.getMonth() + 1);
+                        if (newStartDate.getMonth() !== nextMonth) { // Handle year rollover for dates that jump
+                            newStartDate.setFullYear(newStartDate.getFullYear() + (nextMonth > newStartDate.getMonth() ? 0 : 1));
+                            newStartDate.setMonth(nextMonth);
+                        }
+
+                        const newEndDate = new Date(endDate);
+                        newEndDate.setMonth(newEndDate.getMonth() + 1);
+                        if (newEndDate.getMonth() !== nextMonth) { // Handle year rollover for dates that jump
+                            newEndDate.setFullYear(newEndDate.getFullYear() + (nextMonth > newEndDate.getMonth() ? 0 : 1));
+                            newEndDate.setMonth(nextMonth);
+                        }
+
+
+                        newVacations.push({
+                            start: newStartDate.toISOString().split('T')[0],
+                            end: newEndDate.toISOString().split('T')[0]
+                        });
+                    });
+                }
+
+                // Copy daily schedule, filtering out weekends, holidays, and new vacations
+                if (emp.schedule) {
+                    for (let i = 1; i <= getDaysInMonth(currentYear, currentMonth); i++) {
+                        const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                        const siglasForCurrentDay = emp.schedule[currentMonthDateKey];
+
+                        if (siglasForCurrentDay) {
+                            // Calculate the corresponding day in the next month
+                            const nextMonthDate = new Date(currentYear, currentMonth, i); // Use current date to calc next month's day
+                            nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+
+                            // Ensure day exists in next month (e.g., Feb 30 -> Mar 2)
+                            const maxDaysInNextMonth = getDaysInMonth(nextMonthDate.getFullYear(), nextMonthDate.getMonth());
+                            let targetDay = nextMonthDate.getDate();
+                            if (targetDay > maxDaysInNextMonth) {
+                                targetDay = maxDaysInNextMonth;
+                            }
+
+                            const nextMonthDateKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+
+                            // Check if the target day in the next month is a weekend, holiday, or new vacation
+                            const isNextDayWeekend = isWeekend(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), targetDay);
+                            const isNextDayHoliday = isHoliday(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), targetDay);
+                            const isNextDayVacation = newVacations.some(vac => {
+                                const tempDate = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), targetDay);
+                                tempDate.setHours(0,0,0,0);
+                                const vStart = new Date(vac.start);
+                                vStart.setHours(0,0,0,0);
+                                const vEnd = new Date(vac.end);
+                                vEnd.setHours(0,0,0,0);
+                                return tempDate >= vStart && tempDate <= vEnd;
+                            });
+
+                            if (!isNextDayWeekend && !isNextDayHoliday && !isNextDayVacation) {
+                                // Only copy if the target day is not a weekend, holiday, or vacation
+                                newSchedule[nextMonthDateKey] = Array.isArray(siglasForCurrentDay) ? [...siglasForCurrentDay] : [siglasForCurrentDay];
+                            }
+                        }
+                    }
+                }
+
+                // Update employee's schedule and vacations
+                emp.schedule = newSchedule;
+                emp.vacations = newVacations;
+            });
+
+            // Clear observations for the next month
+            const nextMonthObsKey = `${nextYear}-${nextMonth + 1}`;
+            monthlyObservations[nextMonthObsKey] = ''; // Clear observations for the next month
+
+            saveAllData(); // Save all changes
+            currentMonth = nextMonth;
+            currentYear = nextYear;
+            renderSchedule();
+            window.showMessageBox('Escala transcrita para o próximo mês!');
         }
 
         // --- Event Listeners ---
@@ -1405,6 +1662,11 @@
             document.getElementById('applySiglaDayBtn').addEventListener('click', applySiglaDay); // New button for single day sigla
             document.getElementById('clearSiglasDayBtn').addEventListener('click', clearSiglasForDay); // New button for clearing single day sigla
 
+            // NEW: Multi-day sigla buttons
+            document.getElementById('applyMultiDaySiglaBtn').addEventListener('click', applyMultiDaySigla);
+            document.getElementById('clearMultiDaySiglaRangeBtn').addEventListener('click', clearMultiDaySiglaRange);
+
+
             document.getElementById('applyVacationBtn').addEventListener('click', applyVacation);
             document.getElementById('clearVacationBtn').addEventListener('click', clearVacation);
             document.getElementById('clearEmployeeScheduleBtn').addEventListener('click', clearEmployeeSchedule);
@@ -1415,6 +1677,9 @@
             // New event listeners for Sigla Management Modal
             document.getElementById('manageSiglasBtn').addEventListener('click', window.openManageSiglasModal);
             document.getElementById('addCustomSiglaBtn').addEventListener('click', addCustomSigla);
+
+            // New event listener for Copy Schedule Button
+            document.getElementById('copyScheduleBtn').addEventListener('click', copyScheduleToNextMonth);
 
             // Initial render
             renderCurrentMonthYear();
