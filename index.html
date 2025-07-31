@@ -6,7 +6,7 @@
     <title>Escala do Centro de Saúde</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo="> <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; /* Light blue-gray background */
@@ -403,7 +403,7 @@
         // Firebase imports - these will be available if firebaseConfig is provided by the environment
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
         let currentMonth = new Date().getMonth();
@@ -447,8 +447,8 @@
 
         function saveEmployees() {
             if (userId && db) {
-                // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'employees_master');
+                // CORRIGIDO: Referência do documento ajustada para o caminho correto
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master');
                 setDoc(docRef, { data: JSON.stringify(employees) })
                     .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
             } else {
@@ -458,8 +458,8 @@
 
         async function loadEmployees() {
             if (userId && db) {
-                // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'employees_master');
+                // CORRIGIDO: Referência do documento ajustada para o caminho correto
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -483,8 +483,8 @@
             const key = `${currentYear}-${currentMonth + 1}`;
             monthlyObservations[key] = document.getElementById('monthlyObservations').value;
             if (userId && db) {
-                // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'observations');
+                // CORRIGIDO: Referência do documento ajustada para o caminho correto
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations');
                 setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
                     .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
             } else {
@@ -494,8 +494,8 @@
 
         async function loadMonthlyObservations() {
             if (userId && db) {
-                // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'observations');
+                // CORRIGIDO: Referência do documento ajustada para o caminho correto
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -663,8 +663,8 @@
                     <td>${emp.council}</td>
                     <td>${emp.workShift || ''}</td> `;
                 for (let i = 1; i <= daysInMonth; i++) {
-                    const td = document.createElement('td');
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    const td = document.createElement('td');
                     td.setAttribute('data-employee-id', emp.id); // Add data attribute for employee ID
                     td.setAttribute('data-date-key', dateKey); // Add data attribute for date key
                     td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
