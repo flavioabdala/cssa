@@ -814,7 +814,7 @@
                         const siglasForDay = employee.schedule && employee.schedule[dateKey] ? employee.schedule[dateKey] : [];
                         if (Array.isArray(siglasForDay)) {
                             // Exclude FO and LM from general month view pre-check
-                            siglasForDay.filter(s => s !== 'FO' && s !== 'LM').forEach(sigla => currentMonthSiglas.add(sigla));
+                            siglasForDay.filter(s => s !== 'FO' && s !== 'LM').forEach(sigla => currentMonthSiglas.add(s));
                         } else if (typeof siglasForDay === 'string' && siglasForDay !== '' && siglasForDay !== 'FO' && siglasForDay !== 'LM') {
                             // Handle old string format: treat as a single sigla
                             currentMonthSiglas.add(siglasForDay);
