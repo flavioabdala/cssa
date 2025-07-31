@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -212,7 +212,7 @@
             .printable-table th:nth-child(3) { width: 10%; } /* Conselho */
             .printable-table th:nth-child(4) { width: 8%; } /* Horário de Trabalho */
             /* Calculate remaining width for days dynamically */
-            .printable-table th:nth-child(n+5) { width: calc(62% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
+            .printable-table th:nth-child(n+5) { width: calc(62% / ${getDaysInMonth(new Date().getFullYear(), new Date().getMonth())}); } /* Days (placeholder, actual value calculated on print) */
 
             .printable-legend {
                 font-size: 8px; /* Smaller font for legend */
@@ -383,9 +383,19 @@
 
     <script type="module">
         // Global variables for Firebase configuration and app ID
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // *** ESTAS SÃO AS LINHAS CORRIGIDAS ***
+        const appId = "escalasaudeapp"; // Seu Project ID
+        const firebaseConfig = {
+            apiKey: "AIzaSyALs6IeL242UJH7uXpa-0mQq_CN_RA-xWA",
+            authDomain: "escalasaudeapp.firebaseapp.com",
+            projectId: "escalasaudeapp",
+            storageBucket: "escalasaudeapp.firebasestorage.app",
+            messagingSenderId: "1040621794903",
+            appId: "1:1040621794903:web:61518f984286e11fb29512",
+            measurementId: "G-YHH987DD5J"
+        };
+        const initialAuthToken = null; // Mantenha como null para autenticação anónima padrão
+        // ************************************
 
         let db;
         let auth;
@@ -1201,7 +1211,7 @@
                     console.error("Erro ao inicializar Firebase:", error);
                     window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Usando armazenamento local.`, 7000);
                     // Fallback to localStorage if Firebase initialization fails
-                    userId = crypto.randomUUID();
+                    userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
                     isAuthReady = true;
                     loadEmployees();
                     loadMonthlyObservations();
