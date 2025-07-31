@@ -448,7 +448,7 @@
         function saveEmployees() {
             if (userId && db) {
                 // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'employees_master');
+                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'employees_master');
                 setDoc(docRef, { data: JSON.stringify(employees) })
                     .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
             } else {
@@ -459,7 +459,7 @@
         async function loadEmployees() {
             if (userId && db) {
                 // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'employees_master');
+                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'employees_master');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -484,7 +484,7 @@
             monthlyObservations[key] = document.getElementById('monthlyObservations').value;
             if (userId && db) {
                 // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'observations');
+                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'observations');
                 setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
                     .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
             } else {
@@ -495,7 +495,7 @@
         async function loadMonthlyObservations() {
             if (userId && db) {
                 // CORRIGIDO: Referência do documento corrigida para ter 6 segmentos
-                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'observations');
+                const docRef = doc(db, 'artifacts', appId, 'shared_schedule', userId, 'master_data', 'observations');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
