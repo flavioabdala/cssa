@@ -448,7 +448,7 @@
         function saveEmployees() {
             if (userId && db) {
                 // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master');
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master', 'data');
                 setDoc(docRef, { data: JSON.stringify(employees) })
                     .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
             } else {
@@ -459,7 +459,7 @@
         async function loadEmployees() {
             if (userId && db) {
                 // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master');
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master', 'data');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -484,7 +484,7 @@
             monthlyObservations[key] = document.getElementById('monthlyObservations').value;
             if (userId && db) {
                 // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations');
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations', 'data');
                 setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
                     .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
             } else {
@@ -495,7 +495,7 @@
         async function loadMonthlyObservations() {
             if (userId && db) {
                 // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations');
+                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations', 'data');
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
