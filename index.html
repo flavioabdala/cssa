@@ -131,6 +131,9 @@
             font-weight: 600;
             cursor: pointer; /* To show that the day column is clickable */
         }
+        .schedule-table thead th div {
+            font-size: 0.6rem; /* Extra small for day letter */
+        }
         .schedule-table tbody tr:hover {
             background-color: #f8fafc; /* Lighter on hover */
         }
@@ -302,17 +305,26 @@
 
         <div class="flex justify-center mt-8 space-x-4 flex-wrap">
             <button id="printScheduleBtn" class="btn-primary">Imprimir Escala</button>
-            <button id="transcribeScheduleBtn" class="btn-secondary">Transcrever para o Próximo Mês</button>
+            <button id="copyScheduleBtn" class="btn-secondary">Copiar Escala para o Próximo Mês</button>
             <button id="saveScheduleBtn" class="btn-primary">Salvar Escala</button>
             <button id="manageSiglasBtn" class="btn-secondary">Gerir Siglas</button>
         </div>
 
         <div class="bg-gray-100 p-6 rounded-lg shadow-md mt-8 mb-8">
             <h3 class="text-xl font-semibold mb-4 text-gray-800">Filtrar Escala</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input type="text" id="filterName" placeholder="Filtrar por nome..." class="input-field">
                 <input type="text" id="filterRole" placeholder="Filtrar por função..." class="input-field">
                 <input type="text" id="filterWorkShift" placeholder="Filtrar por horário..." class="input-field">
+                <select id="filterTeam" class="input-field">
+                    <option value="">Filtrar por equipe...</option>
+                    <option value="Sol">Sol</option>
+                    <option value="Verde">Verde</option>
+                    <option value="Vermelha">Vermelha</option>
+                    <option value="Azul">Azul</option>
+                    <option value="Laranja">Laranja</option>
+                    <option value="Apoio">Apoio</option>
+                </select>
             </div>
         </div>
 
@@ -367,19 +379,6 @@
                         <option value="Azul">Azul</option>
                         <option value="Laranja">Laranja</option>
                         <option value="Apoio">Apoio</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="employeeCustomWeekend" class="block text-sm font-medium text-gray-700 mb-1">Fim de semana personalizado:</label>
-                    <select id="employeeCustomWeekend" class="input-field">
-                        <option value="">Nenhum (Sábado e Domingo)</option>
-                        <option value="segunda-feira">Segunda-feira</option>
-                        <option value="terca-feira">Terça-feira</option>
-                        <option value="quarta-feira">Quarta-feira</option>
-                        <option value="quinta-feira">Quinta-feira</option>
-                        <option value="sexta-feira">Sexta-feira</option>
-                        <option value="sabado">Sábado</option>
-                        <option value="domingo">Domingo</option>
                     </select>
                 </div>
             </div>
@@ -501,6 +500,7 @@
         ];
         
         const specialSiglas = ['FO', 'LM'];
+        const dayOfWeekLetters = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
         // --- Utility Functions ---
         window.showMessageBox = function(message, duration = 3000) {
@@ -596,20 +596,8 @@
             const date = new Date(year, month, day);
             const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 
-            const dayOfWeekMap = {
-                'domingo': 0,
-                'segunda-feira': 1,
-                'terca-feira': 2,
-                'quarta-feira': 3,
-                'quinta-feira': 4,
-                'sexta-feira': 5,
-                'sabado': 6
-            };
-
-            const customWeekend = employee.customWeekend?.toLowerCase();
-            const weekendDays = customWeekend ? [dayOfWeekMap[customWeekend]] : [0, 6];
-
-            return weekendDays.includes(dayOfWeek);
+            // Default weekend is Saturday (6) and Sunday (0)
+            return dayOfWeek === 0 || dayOfWeek === 6;
         }
         
         // Brazilian National Holidays (example for 2025)
@@ -713,12 +701,14 @@
             const filterName = document.getElementById('filterName').value.toLowerCase();
             const filterRole = document.getElementById('filterRole').value.toLowerCase();
             const filterWorkShift = document.getElementById('filterWorkShift').value.toLowerCase();
+            const filterTeam = document.getElementById('filterTeam').value.toLowerCase();
 
             return employees.filter(emp => {
                 const nameMatch = emp.name.toLowerCase().includes(filterName);
                 const roleMatch = emp.role.toLowerCase().includes(filterRole);
                 const workShiftMatch = emp.workShift.toLowerCase().includes(filterWorkShift);
-                return nameMatch && roleMatch && workShiftMatch;
+                const teamMatch = emp.team.toLowerCase().includes(filterTeam);
+                return nameMatch && roleMatch && workShiftMatch && teamMatch;
             });
         }
 
@@ -767,13 +757,15 @@
             // Add day headers
             for (let i = 1; i <= daysInMonth; i++) {
                 const th = document.createElement('th');
-                th.textContent = i;
-                const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const date = new Date(currentYear, currentMonth, i);
+                const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+                const dayLetter = dayOfWeekLetters[dayOfWeek];
+                th.innerHTML = `${i} <div class="font-normal text-gray-500">${dayLetter}</div>`;
                 th.setAttribute('data-day', i); // Add data attribute to identify the day
                 th.onclick = function() { toggleCustomHoliday(i); }; // Add click handler
-                // For header, check if ANY employee has a custom weekend on this day, or if it's a holiday/normal weekend
-                const hasCustomWeekend = employees.some(emp => isWeekend(emp, currentYear, currentMonth, i));
-                if (hasCustomWeekend || isHoliday(currentYear, currentMonth, i)) {
+                // For header, check if it's a holiday/normal weekend
+                const isDayWeekend = new Date(currentYear, currentMonth, i).getDay() === 0 || new Date(currentYear, currentMonth, i).getDay() === 6;
+                if (isDayWeekend || isHoliday(currentYear, currentMonth, i)) {
                     th.classList.add('weekend');
                 }
                 scheduleHeader.appendChild(th);
@@ -859,7 +851,6 @@
             const council = document.getElementById('employeeCouncil').value.trim();
             const workShift = document.getElementById('employeeWorkShift').value.trim();
             const team = document.getElementById('employeeTeam').value.trim();
-            const customWeekend = document.getElementById('employeeCustomWeekend').value.trim();
 
             if (role === 'Outro') {
                 role = customRole;
@@ -873,7 +864,6 @@
                     council,
                     workShift,
                     team,
-                    customWeekend,
                     schedule: {},
                     vacations: [],
                     leaves: [] // New: stores LM/FO periods
@@ -890,7 +880,6 @@
                 document.getElementById('employeeCouncil').value = '';
                 document.getElementById('employeeWorkShift').value = '';
                 document.getElementById('employeeTeam').value = '';
-                document.getElementById('employeeCustomWeekend').value = '';
                 window.showMessageBox('Funcionário adicionado com sucesso!');
             } else {
                 window.showMessageBox('Por favor, preencha todos os campos do funcionário.', 4000);
@@ -966,9 +955,11 @@
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 if (!isWeekend(employee, currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i) && !isLeave(employee, currentYear, currentMonth, i, 'FO') && !isLeave(employee, currentYear, currentMonth, i, 'LM')) {
                     employee.schedule[dateKey] = selectedSiglas;
-                } else if (isHoliday(currentYear, currentMonth, i)) {
-                    // Clear existing siglas on custom holidays
-                    delete employee.schedule[dateKey];
+                } else {
+                    // Clear existing siglas on weekends, holidays, or special leaves
+                    if (employee.schedule && employee.schedule[dateKey]) {
+                        delete employee.schedule[dateKey];
+                    }
                 }
             }
             saveEmployees();
@@ -1163,13 +1154,13 @@
             }
         }
         
-        // --- Transcribe Functionality ---
+        // --- Copy Schedule Functionality ---
         function copyScheduleToNextMonth() {
             if (employees.length === 0) {
-                window.showMessageBox('Não há funcionários para transcrever a escala.', 3000);
+                window.showMessageBox('Não há funcionários para copiar a escala.', 3000);
                 return;
             }
-            if (confirm('Tem certeza que deseja transcrever a escala atual para o próximo mês? Isso substituirá a escala existente do próximo mês.')) {
+            if (confirm('Tem certeza que deseja copiar a escala atual para o próximo mês? Isso não apagará as informações já existentes, apenas preencherá os dias úteis. Certifique-se de que não existem informações preenchidas para o próximo mês que você deseja manter.')) {
                 let nextMonth = currentMonth + 1;
                 let nextYear = currentYear;
                 if (nextMonth > 11) {
@@ -1177,71 +1168,48 @@
                     nextYear++;
                 }
 
-                // Temporary data for the next month
-                const nextMonthEmployees = employees.map(emp => ({
-                    ...emp,
-                    schedule: {},
-                    vacations: [],
-                    leaves: []
-                }));
-
-                nextMonthEmployees.forEach(emp => {
-                    const daysInCurrentMonth = getDaysInMonth(currentYear, currentMonth);
+                employees.forEach(emp => {
                     const daysInNextMonth = getDaysInMonth(nextYear, nextMonth);
+                    
+                    if (!emp.schedule) {
+                        emp.schedule = {};
+                    }
 
                     for (let i = 1; i <= daysInNextMonth; i++) {
                         const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                         
-                        // Copy only if the day is a workday in the NEXT month
                         if (isWorkday(emp, nextYear, nextMonth, i)) {
-                            const currentDay = i > daysInCurrentMonth ? daysInCurrentMonth : i;
-                            const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
-                            const originalEmployee = employees.find(e => e.id === emp.id);
-                            if (originalEmployee.schedule && originalEmployee.schedule[currentMonthDateKey]) {
-                                emp.schedule[nextMonthDateKey] = originalEmployee.schedule[currentMonthDateKey];
+                            // Encontrar a sigla para o dia correspondente da semana no mês atual
+                            const currentDayOfWeek = new Date(nextYear, nextMonth, i).getDay();
+                            const currentMonthDays = getDaysInMonth(currentYear, currentMonth);
+
+                            let foundSigla = null;
+                            for (let j = 1; j <= currentMonthDays; j++) {
+                                const currentDay = new Date(currentYear, currentMonth, j);
+                                if (currentDay.getDay() === currentDayOfWeek && isWorkday(emp, currentYear, currentMonth, j)) {
+                                    const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
+                                    if (emp.schedule && emp.schedule[currentMonthDateKey]) {
+                                        foundSigla = emp.schedule[currentMonthDateKey];
+                                        break;
+                                    }
+                                }
                             }
+                            if (foundSigla) {
+                                emp.schedule[nextMonthDateKey] = foundSigla;
+                            } else {
+                                // Se não encontrar, limpa o dia no próximo mês para evitar dados incorretos
+                                delete emp.schedule[nextMonthDateKey];
+                            }
+                        } else {
+                             // Se não é dia útil, garante que não há sigla
+                            delete emp.schedule[nextMonthDateKey];
                         }
-                    }
-                    
-                    // Copy LM/FO/Vacations to the next month with updated dates
-                    const originalEmployee = employees.find(e => e.id === emp.id);
-                    if (originalEmployee.vacations) {
-                        emp.vacations = originalEmployee.vacations.map(vac => {
-                            const newStart = new Date(vac.start);
-                            const newEnd = new Date(vac.end);
-                            newStart.setMonth(newStart.getMonth() + 1);
-                            newEnd.setMonth(newEnd.getMonth() + 1);
-                            return { start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0] };
-                        });
-                    }
-                    if (originalEmployee.leaves) {
-                         emp.leaves = originalEmployee.leaves.map(leave => {
-                            const newStart = new Date(leave.start);
-                            const newEnd = new Date(leave.end);
-                            newStart.setMonth(newStart.getMonth() + 1);
-                            newEnd.setMonth(newEnd.getMonth() + 1);
-                            return { start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0], type: leave.type };
-                        });
                     }
                 });
                 
-                // Now, overwrite the original employees array with the new one
-                employees = nextMonthEmployees;
-
-                // Copy observations
-                const currentMonthKey = `${currentYear}-${currentMonth + 1}`;
-                const nextMonthKey = `${nextYear}-${nextMonth + 1}`;
-                const currentObs = monthlyObservations[currentMonthKey] || '';
-                monthlyObservations[nextMonthKey] = currentObs;
-
-                // Copy custom holidays
-                if (customHolidays[currentMonthKey]) {
-                    customHolidays[nextMonthKey] = [...customHolidays[currentMonthKey]];
-                }
-
-                saveAllData();
-                window.showMessageBox('Escala transcrita com sucesso para o próximo mês!');
-                // Move to next month view to show the transcribed schedule
+                saveEmployees();
+                window.showMessageBox('Escala copiada com sucesso para o próximo mês!');
+                // Move to next month view to show the copied schedule
                 currentMonth = nextMonth;
                 currentYear = nextYear;
                 renderSchedule();
@@ -1255,8 +1223,9 @@
             const filterName = document.getElementById('filterName').value.trim();
             const filterRole = document.getElementById('filterRole').value.trim();
             const filterWorkShift = document.getElementById('filterWorkShift').value.trim();
+            const filterTeam = document.getElementById('filterTeam').value.trim();
             
-            const filterInfo = `Filtros: Nome: ${filterName || 'Nenhum'}, Função: ${filterRole || 'Nenhum'}, Horário: ${filterWorkShift || 'Nenhum'}`;
+            const filterInfo = `Filtros: Nome: ${filterName || 'Nenhum'}, Função: ${filterRole || 'Nenhum'}, Horário: ${filterWorkShift || 'Nenhum'}, Equipe: ${filterTeam || 'Nenhum'}`;
 
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -1282,6 +1251,7 @@
                             height: 12px;
                         }
                         .printable-table th { background-color: #e0e0e0; }
+                        .printable-table th .day-letter { font-size: 7px; color: #555; }
                         .printable-table .weekend, .printable-table .holiday { background-color: #ccc; }
                         .printable-table .vacation { background-color: #a7d9ff; font-weight: bold; }
                         .printable-table .licenca { background-color: #fde68a; font-weight: bold; }
@@ -1351,12 +1321,14 @@
                                         <th>Horário</th>
                                         ${Array.from({ length: getDaysInMonth(currentYear, currentMonth) }, (_, i) => {
                                             const day = i + 1;
-                                            // Check if any filtered employee has a custom weekend on this day
-                                            const hasCustomWeekend = filteredEmployees.some(emp => isWeekend(emp, currentYear, currentMonth, day));
+                                            const date = new Date(currentYear, currentMonth, day);
+                                            const dayOfWeek = date.getDay();
+                                            const dayLetter = dayOfWeekLetters[dayOfWeek];
+                                            const isDayWeekend = isWeekend(null, currentYear, currentMonth, day);
                                             const isDayHoliday = isHoliday(currentYear, currentMonth, day);
                                             let classes = '';
-                                            if (hasCustomWeekend || isDayHoliday) classes = 'weekend';
-                                            return `<th class="${classes}">${day}</th>`;
+                                            if (isDayWeekend || isDayHoliday) classes = 'weekend';
+                                            return `<th class="${classes}">${day} <div class="day-letter">${dayLetter}</div></th>`;
                                         }).join('')}
                                     </tr>
                                 </thead>
@@ -1508,6 +1480,7 @@
             document.getElementById('filterName').addEventListener('input', renderSchedule);
             document.getElementById('filterRole').addEventListener('input', renderSchedule);
             document.getElementById('filterWorkShift').addEventListener('input', renderSchedule);
+            document.getElementById('filterTeam').addEventListener('change', renderSchedule);
 
             document.getElementById('applySiglaMonthBtn').addEventListener('click', applySiglaMonth);
             document.getElementById('clearSiglasMonthBtn').addEventListener('click', clearSiglasForMonth);
@@ -1518,7 +1491,7 @@
             document.getElementById('clearLeaveBtn').addEventListener('click', clearLeave);
             document.getElementById('clearEmployeeScheduleBtn').addEventListener('click', clearEmployeeSchedule);
             document.getElementById('printScheduleBtn').addEventListener('click', printSchedule);
-            document.getElementById('transcribeScheduleBtn').addEventListener('click', copyScheduleToNextMonth);
+            document.getElementById('copyScheduleBtn').addEventListener('click', copyScheduleToNextMonth);
             document.getElementById('saveScheduleBtn').addEventListener('click', saveAllData);
             document.getElementById('manageSiglasBtn').addEventListener('click', openManageSiglasModal);
             document.getElementById('monthlyObservations').addEventListener('input', saveMonthlyObservations);
