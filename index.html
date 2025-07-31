@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -300,7 +300,7 @@
             <h3 class="text-xl font-semibold mb-4 text-blue-800">Gerenciamento de Funcionários</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <input type="text" id="employeeName" placeholder="Nome do Funcionário" class="input-field">
-                <select id="employeeRole" class="input-field">
+                <select type="text" id="employeeRole" class="input-field">
                     <option value="">Selecione a Função</option>
                     <option value="Técnico de Enfermagem">Técnico de Enfermagem</option>
                     <option value="Enfermeiro">Enfermeiro</option>
@@ -568,30 +568,40 @@
             return nationalHolidays.includes(dateString);
         }
 
+        // CORREÇÃO: Função para verificar se está de férias, com fuso horário corrigido
         function isVacation(employee, year, month, day) {
             const currentDate = new Date(year, month, day);
             if (!employee.vacations) return false;
             for (const vacation of employee.vacations) {
-                const startDate = new Date(vacation.start);
-                const endDate = new Date(vacation.end);
+                const startDateParts = vacation.start.split('-').map(Number);
+                const endDateParts = vacation.end.split('-').map(Number);
+                const startDate = new Date(startDateParts[0], startDateParts[1] - 1, startDateParts[2]);
+                const endDate = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2]);
+                
                 startDate.setHours(0,0,0,0);
                 endDate.setHours(0,0,0,0);
                 currentDate.setHours(0,0,0,0);
+                
                 if (currentDate >= startDate && currentDate <= endDate) return true;
             }
             return false;
         }
 
+        // CORREÇÃO: Função para verificar se está de licença ou folga, com fuso horário corrigido
         function isLeave(employee, year, month, day, type) {
             const currentDate = new Date(year, month, day);
             const leaves = employee.leaves || [];
             for (const leave of leaves) {
                 if (leave.type === type) {
-                    const startDate = new Date(leave.start);
-                    const endDate = new Date(leave.end);
+                    const startDateParts = leave.start.split('-').map(Number);
+                    const endDateParts = leave.end.split('-').map(Number);
+                    const startDate = new Date(startDateParts[0], startDateParts[1] - 1, startDateParts[2]);
+                    const endDate = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2]);
+                    
                     startDate.setHours(0,0,0,0);
                     endDate.setHours(0,0,0,0);
                     currentDate.setHours(0,0,0,0);
+                    
                     if (currentDate >= startDate && currentDate <= endDate) return true;
                 }
             }
