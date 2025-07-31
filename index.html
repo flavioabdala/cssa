@@ -1177,33 +1177,32 @@
                         emp.schedule = {};
                     }
 
+                    // Store the current month's workday schedules indexed by day of the week
+                    const currentMonthWorkdays = {};
+                    for (let j = 1; j <= getDaysInMonth(currentYear, currentMonth); j++) {
+                        const date = new Date(currentYear, currentMonth, j);
+                        const dayOfWeek = date.getDay(); // 0-6
+                        if (isWorkday(emp, currentYear, currentMonth, j) && emp.schedule && emp.schedule[`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`]) {
+                            if (!currentMonthWorkdays[dayOfWeek]) {
+                                currentMonthWorkdays[dayOfWeek] = emp.schedule[`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`];
+                            }
+                        }
+                    }
+
                     for (let i = 1; i <= daysInNextMonth; i++) {
                         const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                         
-                        if (isWorkday(emp, nextYear, nextMonth, i)) {
-                            // Encontrar a sigla para o dia correspondente da semana no mês atual
-                            const currentDayOfWeek = new Date(nextYear, nextMonth, i).getDay();
-                            const currentMonthDays = getDaysInMonth(currentYear, currentMonth);
-
-                            let foundSigla = null;
-                            for (let j = 1; j <= currentMonthDays; j++) {
-                                const currentDay = new Date(currentYear, currentMonth, j);
-                                if (currentDay.getDay() === currentDayOfWeek && isWorkday(emp, currentYear, currentMonth, j)) {
-                                    const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
-                                    if (emp.schedule && emp.schedule[currentMonthDateKey]) {
-                                        foundSigla = emp.schedule[currentMonthDateKey];
-                                        break;
-                                    }
-                                }
-                            }
-                            if (foundSigla) {
-                                emp.schedule[nextMonthDateKey] = foundSigla;
+                        // Only update if it's a workday and no existing entry exists for the day
+                        if (isWorkday(emp, nextYear, nextMonth, i) && !emp.schedule[nextMonthDateKey]) {
+                            const dayOfWeek = new Date(nextYear, nextMonth, i).getDay();
+                            const copiedSigla = currentMonthWorkdays[dayOfWeek];
+                            if (copiedSigla) {
+                                emp.schedule[nextMonthDateKey] = copiedSigla;
                             } else {
-                                // Se não encontrar, limpa o dia no próximo mês para evitar dados incorretos
                                 delete emp.schedule[nextMonthDateKey];
                             }
-                        } else {
-                             // Se não é dia útil, garante que não há sigla
+                        } else if (!isWorkday(emp, nextYear, nextMonth, i)) {
+                             // Se não é dia útil (fins de semana ou feriados), garante que não há sigla
                             delete emp.schedule[nextMonthDateKey];
                         }
                     }
