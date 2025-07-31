@@ -88,6 +88,16 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             position: relative;
         }
+        #manageSiglasModal .modal-content {
+            max-height: 90vh; /* Set max height for the modal */
+            display: flex; /* Flex container for content */
+            flex-direction: column; /* Stack content vertically */
+        }
+        #siglasList {
+            overflow-y: auto; /* Add vertical scrollbar */
+            flex-grow: 1; /* Allow list to take up remaining space */
+            margin-top: 1rem;
+        }
         .close-button {
             position: absolute;
             top: 1rem;
