@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -863,6 +863,7 @@
             currentEditingEmployeeId = null;
         }
 
+        // CORREÇÃO: Função para aplicar siglas do mês, corrigindo o erro de 'undefined'
         function applySiglaMonth() {
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
 
@@ -876,6 +877,11 @@
 
             const employee = employees[employeeIndex];
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+
+            // Garante que employee.schedule seja um objeto antes de usá-lo
+            if (!employee.schedule) {
+                employee.schedule = {};
+            }
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -1078,7 +1084,7 @@
                         // Copy day-by-day siglas
                         const currentDay = i > daysInCurrentMonth ? daysInCurrentMonth : i;
                         const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
-                        if (emp.schedule[currentMonthDateKey]) {
+                        if (emp.schedule && emp.schedule[currentMonthDateKey]) {
                              newSchedule[nextMonthDateKey] = emp.schedule[currentMonthDateKey];
                         }
                     }
