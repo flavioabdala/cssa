@@ -203,7 +203,7 @@
             }
 
             body {
-                font-size: 6px; /* Font size menor para o print */
+                font-size: 8px; /* Font size maior para o print */
                 margin: 0;
                 padding: 0;
             }
@@ -227,7 +227,7 @@
             .printable-header {
                 text-align: center;
                 margin-bottom: 10px;
-                font-size: 10px;
+                font-size: 16px;
             }
             .printable-table-container {
                 width: 100%;
@@ -239,24 +239,28 @@
                 table-layout: fixed; /* Fixa o layout da tabela */
             }
             .printable-table th, .printable-table td {
-                font-size: 7px;
+                font-size: 9px; /* Font size ajustada */
                 padding: 1px; /* Padding menor */
                 text-align: center;
                 white-space: normal;
                 word-break: break-word; /* Quebra palavras longas */
                 height: 12px; /* Reduzindo a altura da linha */
             }
-            /* AJUSTE: Proporção das colunas para impressão (agora mais finas) */
-            .printable-table th:nth-child(1), .printable-table td:nth-child(1) { width: 25%; } /* Nome */
-            .printable-table th:nth-child(2), .printable-table td:nth-child(2) { width: 12%; } /* Função */
-            .printable-table th:nth-child(3), .printable-table td:nth-child(3) { width: 9%; } /* Conselho */
-            .printable-table th:nth-child(4), .printable-table td:nth-child(4) { width: 8%; } /* Horário de Trabalho */
+            /* AJUSTE: Largura das colunas para impressão (mais finas) */
+            .printable-table th:nth-child(1) { width: 25%; }
+            .printable-table td:nth-child(1) { width: 25%; font-weight: bold; color: #000; }
+            .printable-table th:nth-child(2) { width: 10%; }
+            .printable-table td:nth-child(2) { width: 10%; font-weight: bold; color: #000; }
+            .printable-table th:nth-child(3) { width: 7%; }
+            .printable-table td:nth-child(3) { width: 7%; font-weight: bold; color: #000; }
+            .printable-table th:nth-child(4) { width: 6%; }
+            .printable-table td:nth-child(4) { width: 6%; font-weight: bold; color: #000; }
             .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) { /* Dias - Ocupam o restante do espaço */
                 width: auto;
             }
             
             .printable-legend {
-                font-size: 8px;
+                font-size: 10px;
                 margin-top: 15px;
                 border-top: 1px solid #000;
                 padding-top: 8px;
@@ -1187,12 +1191,12 @@
                         .printable-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
                         .printable-table th, .printable-table td {
                             border: 1px solid #000;
-                            padding: 1px; /* Padding menor ainda */
+                            padding: 1px;
                             text-align: center;
-                            font-size: 7px; /* Smallest font for print */
+                            font-size: 9px; /* Font size ajustada */
                             white-space: normal;
                             word-break: break-word;
-                            height: 10px; /* Reduzindo a altura da linha */
+                            height: 12px;
                         }
                         .printable-table th { background-color: #e0e0e0; }
                         .printable-table .weekend, .printable-table .holiday { background-color: #ccc; }
@@ -1200,7 +1204,7 @@
                         .printable-table .licenca { background-color: #fde68a; font-weight: bold; }
                         .printable-table .folga { background-color: #9ca3af; color: #fff; font-weight: bold; }
                         .printable-legend {
-                            font-size: 8px;
+                            font-size: 10px;
                             margin-top: 15px;
                             border-top: 1px solid #000;
                             padding-top: 8px;
@@ -1229,12 +1233,18 @@
                         .team-laranja-print { background-color: #FFA500; color: #333; }
                         .team-apoio-print { background-color: #D3D3D3; color: #333; }
                         
-                        /* AJUSTE: Proporção das colunas para impressão (novos valores) */
-                        .printable-table th:nth-child(1), .printable-table td:nth-child(1) { width: 25%; }
-                        .printable-table th:nth-child(2), .printable-table td:nth-child(2) { width: 12%; }
-                        .printable-table th:nth-child(3), .printable-table td:nth-child(3) { width: 9%; }
-                        .printable-table th:nth-child(4), .printable-table td:nth-child(4) { width: 8%; }
-                        .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) { width: auto; }
+                        /* AJUSTE: Largura das colunas para impressão (mais finas) */
+                        .printable-table th:nth-child(1) { width: 25%; }
+                        .printable-table td:nth-child(1) { width: 25%; font-weight: bold; color: #000; }
+                        .printable-table th:nth-child(2) { width: 10%; }
+                        .printable-table td:nth-child(2) { width: 10%; font-weight: bold; color: #000; }
+                        .printable-table th:nth-child(3) { width: 7%; }
+                        .printable-table td:nth-child(3) { width: 7%; font-weight: bold; color: #000; }
+                        .printable-table th:nth-child(4) { width: 6%; }
+                        .printable-table td:nth-child(4) { width: 6%; font-weight: bold; color: #000; }
+                        .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) { /* Dias - Ocupam o restante do espaço */
+                            width: auto;
+                        }
                         
                         @page {
                             size: landscape;
@@ -1254,7 +1264,7 @@
                                         <th>Nome</th>
                                         <th>Função</th>
                                         <th>Conselho</th>
-                                        <th>Horário de Trabalho</th>
+                                        <th>Horário</th>
                                         ${Array.from({ length: getDaysInMonth(currentYear, currentMonth) }, (_, i) => {
                                             const day = i + 1;
                                             const isDayWeekend = isWeekend(currentYear, currentMonth, day);
@@ -1268,7 +1278,7 @@
                                 <tbody>
                                     ${sortEmployees(employees).map(emp => {
                                         let rowHtml = `<tr>
-                                            <td class="font-medium ${getTeamColorClass(emp.team)}-print">${emp.name}</td>
+                                            <td class="font-medium">${emp.name}</td>
                                             <td>${emp.role}</td>
                                             <td>${emp.council}</td>
                                             <td>${emp.workShift || ''}</td>`;
