@@ -422,8 +422,8 @@
                         <button id="applyFolgaBtn" class="btn-secondary w-full">Aplicar Folga (FO)</button>
                         <button id="applyLicencaBtn" class="btn-secondary w-full">Aplicar Licença (LM)</button>
                     </div>
-                    <button id="clearVacationBtn" class="btn-danger w-full mt-4">Limpar Férias</button>
-                    <button id="clearLeaveBtn" class="btn-danger w-full mt-2">Limpar Licenças e Folgas</button>
+                    <button id="clearVacationBtn" class="btn-danger w-full mt-4">Limpar Férias deste Mês</button>
+                    <button id="clearLeaveBtn" class="btn-danger w-full mt-2">Limpar Licenças e Folgas deste Mês</button>
                 </div>
             </div>
             <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6">Limpar Toda a Escala do Funcionário</button>
@@ -1029,26 +1029,55 @@
             renderSchedule();
             window.closeSiglaVacationModal();
         }
-
-        function clearVacation() {
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-            employees[employeeIndex].vacations = [];
-            saveEmployees();
-            renderSchedule();
-            window.showMessageBox('Férias do funcionário limpas.');
-            window.closeSiglaVacationModal();
-        }
         
-        function clearLeave() {
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-            employees[employeeIndex].leaves = [];
-            saveEmployees();
-            renderSchedule();
-            window.showMessageBox('Licenças e folgas do funcionário limpas.');
-            window.closeSiglaVacationModal();
+        // CORREÇÃO: Função para limpar férias apenas do mês atual
+        function clearVacation() {
+            if (confirm('Tem certeza que deseja limpar as férias deste funcionário no mês atual?')) {
+                const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
+                if (employeeIndex === -1) return;
+
+                const employee = employees[employeeIndex];
+                const currentMonthStart = new Date(currentYear, currentMonth, 1);
+                const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+                employee.vacations = (employee.vacations || []).filter(vacation => {
+                    const vacationStart = new Date(vacation.start);
+                    const vacationEnd = new Date(vacation.end);
+                    
+                    return vacationEnd < currentMonthStart || vacationStart > currentMonthEnd;
+                });
+                
+                saveEmployees();
+                renderSchedule();
+                window.showMessageBox('Férias do funcionário no mês atual limpas.');
+                window.closeSiglaVacationModal();
+            }
         }
+
+        // CORREÇÃO: Função para limpar licenças e folgas apenas do mês atual
+        function clearLeave() {
+            if (confirm('Tem certeza que deseja limpar as folgas e licenças deste funcionário no mês atual?')) {
+                const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
+                if (employeeIndex === -1) return;
+
+                const employee = employees[employeeIndex];
+                const currentMonthStart = new Date(currentYear, currentMonth, 1);
+                const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+                employee.leaves = (employee.leaves || []).filter(leave => {
+                    const leaveStart = new Date(leave.start);
+                    const leaveEnd = new Date(leave.end);
+                    
+                    return leaveEnd < currentMonthStart || leaveStart > currentMonthEnd;
+                });
+
+                saveEmployees();
+                renderSchedule();
+                window.showMessageBox('Licenças e folgas do funcionário no mês atual limpas.');
+                window.closeSiglaVacationModal();
+            }
+        }
+
 
         function clearEmployeeSchedule() {
             if (confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário? Isso é irreversível.')) {
