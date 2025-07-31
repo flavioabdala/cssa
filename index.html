@@ -6,7 +6,8 @@
     <title>Escala do Centro de Saúde</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:;base64,iVBORw0KGgo="> <style>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; /* Light blue-gray background */
@@ -110,9 +111,10 @@
         }
         .schedule-table th, .schedule-table td {
             border: 1px solid #e2e8f0; /* Light gray table borders */
-            padding: 0.5rem;
+            padding: 0.25rem; /* Smaller padding */
             text-align: center;
             white-space: nowrap; /* Prevent text wrapping in cells */
+            font-size: 0.75rem; /* text-xs */
         }
         .schedule-table th {
             background-color: #e2e8f0; /* Light gray header */
@@ -130,6 +132,18 @@
             color: #1e40af;
             font-weight: 600;
         }
+        /* New colors for LM/FO */
+        .licenca {
+            background-color: #fcd34d; /* Yellow */
+            color: #78350f;
+            font-weight: 600;
+        }
+        .folga {
+            background-color: #6b7280; /* Dark gray */
+            color: #ffffff;
+            font-weight: 600;
+        }
+
         .printable-table {
             width: 100%;
             border-collapse: collapse;
@@ -146,6 +160,14 @@
         .printable-table .vacation {
             background-color: #a7d9ff;
         }
+        .printable-table .licenca {
+            background-color: #fde68a;
+        }
+        .printable-table .folga {
+            background-color: #9ca3af;
+            color: #fff;
+        }
+
         .printable-legend {
             font-size: 10px;
             margin-top: 20px;
@@ -164,7 +186,7 @@
 
         @media print {
             body {
-                font-size: 10px; /* Base font size for print */
+                font-size: 8px; /* Base font size for print */
                 margin: 0;
                 padding: 0;
             }
@@ -268,9 +290,9 @@
             <h3 class="text-xl font-semibold mb-4 text-blue-800">Gerenciamento de Funcionários</h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <input type="text" id="employeeName" placeholder="Nome do Funcionário" class="input-field">
-                <select type="text" id="employeeRole" class="input-field">
+                <select id="employeeRole" class="input-field">
                     <option value="">Selecione a Função</option>
-                    <option value="Técnico">Técnico</option>
+                    <option value="Técnico de Enfermagem">Técnico de Enfermagem</option>
                     <option value="Enfermeiro">Enfermeiro</option>
                     <option value="Outro">Outro</option>
                 </select>
@@ -321,7 +343,9 @@
 
         <div class="flex justify-center mt-8 space-x-4">
             <button id="printScheduleBtn" class="btn-primary">Imprimir Escala</button>
+            <button id="transcribeScheduleBtn" class="btn-secondary">Transcrever para o Próximo Mês</button>
             <button id="saveScheduleBtn" class="btn-primary">Salvar Escala</button>
+            <button id="manageSiglasBtn" class="btn-secondary">Gerir Siglas</button>
         </div>
     </div>
 
@@ -334,47 +358,54 @@
                 <div id="siglaSectionMonth" class="bg-gray-50 p-4 rounded-lg shadow-sm">
                     <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o Mês</h4>
                     <div class="mb-4 space-y-2" id="siglaCheckboxesMonth">
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="F" class="mr-2"> F (Farmácia)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="SOE" class="mr-2"> SOE (Sala de Observação)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="P" class="mr-2"> P (Presente)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="CT" class="mr-2"> CT (Curativo)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="BR" class="mr-2"> BR (Acolhimento Baixo Risco)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="E" class="mr-2"> E (ECG)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="V" class="mr-2"> V (Vacina)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="T" class="mr-2"> T (Totem)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaMonth" value="C" class="mr-2"> C (Consultórios)</label>
-                    </div>
+                        </div>
                     <button id="applySiglaMonthBtn" class="btn-primary w-full">Aplicar Sigla(s) para o Mês</button>
                     <button id="clearSiglasMonthBtn" class="btn-secondary w-full mt-2">Limpar Siglas do Mês</button>
                 </div>
 
-                <div id="siglaSectionDay" class="bg-gray-50 p-4 rounded-lg shadow-sm hidden">
-                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Sigla(s) para o Dia <span id="modalDayNumber"></span></h4>
-                    <div class="mb-4 space-y-2" id="siglaCheckboxesDay">
-                        <label class="flex items-center"><input type="checkbox" name="siglaDay" value="FO" class="mr-2"> FO (Folga)</label>
-                        <label class="flex items-center"><input type="checkbox" name="siglaDay" value="LM" class="mr-2"> LM (Licença Médica)</label>
-                        </div>
-                    <button id="applySiglaDayBtn" class="btn-primary w-full">Aplicar Sigla(s) para o Dia</button>
-                    <button id="clearSiglasDayBtn" class="btn-secondary w-full mt-2">Limpar Siglas do Dia</button>
-                </div>
-
                 <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
-                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Férias</h4>
+                    <h4 class="text-lg font-semibold mb-3 text-gray-800">Adicionar Férias, Folga ou Licença Médica</h4>
                     <div class="mb-4">
-                        <label for="vacationStart" class="block text-sm font-medium text-gray-700 mb-1">Início das Férias:</label>
-                        <input type="date" id="vacationStart" class="input-field">
+                        <label for="dateRangeStart" class="block text-sm font-medium text-gray-700 mb-1">Início:</label>
+                        <input type="date" id="dateRangeStart" class="input-field">
                     </div>
                     <div class="mb-4">
-                        <label for="vacationEnd" class="block text-sm font-medium text-gray-700 mb-1">Fim das Férias:</label>
-                        <input type="date" id="vacationEnd" class="input-field">
+                        <label for="dateRangeEnd" class="block text-sm font-medium text-gray-700 mb-1">Fim:</label>
+                        <input type="date" id="dateRangeEnd" class="input-field">
                     </div>
-                    <button id="applyVacationBtn" class="btn-primary w-full">Aplicar Férias</button>
-                    <button id="clearVacationBtn" class="btn-secondary w-full mt-2">Limpar Férias</button>
+                    <div class="flex flex-col space-y-2">
+                        <button id="applyVacationBtn" class="btn-primary w-full">Aplicar Férias</button>
+                        <button id="applyFolgaBtn" class="btn-secondary w-full">Aplicar Folga (FO)</button>
+                        <button id="applyLicencaBtn" class="btn-secondary w-full">Aplicar Licença (LM)</button>
+                    </div>
+                    <button id="clearVacationBtn" class="btn-danger w-full mt-4">Limpar Férias</button>
+                    <button id="clearLeaveBtn" class="btn-danger w-full mt-2">Limpar Licenças e Folgas</button>
                 </div>
             </div>
             <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6">Limpar Toda a Escala do Funcionário</button>
         </div>
     </div>
+    
+    <div id="manageSiglasModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-button" onclick="window.closeManageSiglasModal()">&times;</button>
+            <h3 class="text-2xl font-bold mb-4 text-blue-700">Gerir Siglas Personalizadas</h3>
+            <div class="bg-gray-50 p-4 rounded-lg shadow-sm mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <input type="text" id="siglaAbbr" placeholder="Sigla (Ex: SOE)" class="input-field">
+                    <input type="text" id="siglaName" placeholder="Nome Completo (Ex: Sala de Observação)" class="input-field">
+                    <input type="text" id="siglaColor" placeholder="Cor CSS (Ex: #FFD700)" class="input-field">
+                </div>
+                <button id="addSiglaBtn" class="btn-primary w-full">Adicionar Sigla</button>
+            </div>
+            <div id="siglasList" class="mt-4">
+                <h4 class="text-lg font-medium mb-2 text-gray-700">Siglas Atuais:</h4>
+                <ul id="siglasUl" class="space-y-2">
+                    </ul>
+            </div>
+        </div>
+    </div>
+
 
     <div id="messageBox" class="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg hidden z-2000">
         <p id="messageText"></p>
@@ -393,45 +424,39 @@
             appId: "1:1040621794903:web:61518f984286e11fb29512",
             measurementId: "G-YHH987DD5J"
         };
-        const initialAuthToken = null; // Mantenha como null para autenticação anónima padrão
+        const initialAuthToken = null;
 
         let db;
         let auth;
         let userId;
         let isAuthReady = false;
 
-        // Firebase imports - these will be available if firebaseConfig is provided by the environment
+        // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let employees = [];
         let currentEditingEmployeeId = null;
-        let currentEditingDateKey = null; // New: Stores the date key if a specific day is being edited
-        let monthlyObservations = {}; // Stores observations per month/year
-
-        // Brazilian National Holidays (example for 2025)
-        const nationalHolidays = [
-            '2025-01-01', // Confraternização Universal
-            '2025-03-03', // Carnaval (Monday)
-            '2025-03-04', // Carnaval (Tuesday)
-            '2025-04-18', // Paixão de Cristo
-            '2025-04-21', // Tiradentes
-            '2025-05-01', // Dia do Trabalho
-            '2025-06-19', // Corpus Christi
-            '2025-09-07', // Independência do Brasil
-            '2025-10-12', // Nossa Senhora Aparecida
-            '2025-11-02', // Finados
-            '2025-11-15', // Proclamação da República
-            '2025-12-25'  // Natal
+        let monthlyObservations = {};
+        let customSiglas = [
+            { id: '1', abbr: 'F', name: 'Farmácia', color: '#fca5a5' }, // Red-300
+            { id: '2', abbr: 'S', name: 'Sala de Observação', color: '#fdba74' }, // Orange-300
+            { id: '3', abbr: 'P', name: 'Presente', color: '#86efac' }, // Green-300
+            { id: '4', abbr: 'CT', name: 'Curativo', color: '#bfdbfe' }, // Blue-300
+            { id: '5', abbr: 'BR', name: 'Acolhimento Baixo Risco', color: '#a5b4fc' }, // Indigo-300
+            { id: '6', abbr: 'E', name: 'ECG', color: '#c4b5fd' }, // Violet-300
+            { id: '7', abbr: 'V', name: 'Vacina', color: '#c7d2fe' }, // Indigo-200
+            { id: '8', abbr: 'T', name: 'Totem', color: '#a0aec0' }, // Gray-500
+            { id: '9', abbr: 'C', name: 'Consultórios', color: '#a0e4a7' }, // Custom light green
         ];
+        
+        const specialSiglas = ['FO', 'LM'];
 
         // --- Utility Functions ---
-
-        // Make functions globally accessible for inline HTML event handlers
         window.showMessageBox = function(message, duration = 3000) {
             const messageBox = document.getElementById('messageBox');
             document.getElementById('messageText').textContent = message;
@@ -445,36 +470,41 @@
             document.getElementById('messageBox').classList.add('hidden');
         }
 
-        function saveEmployees() {
+        function getDocRef(collectionName) {
+            return doc(db, 'artifacts', appId, 'users', userId, collectionName, 'data');
+        }
+        
+        async function saveData(collectionName, data) {
             if (userId && db) {
-                // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master', 'data');
-                setDoc(docRef, { data: JSON.stringify(employees) })
-                    .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
+                const docRef = getDocRef(collectionName);
+                await setDoc(docRef, { data: JSON.stringify(data) })
+                    .catch(error => console.error(`Erro ao salvar ${collectionName} no Firestore:`, error));
             } else {
-                localStorage.setItem('healthScheduleEmployees', JSON.stringify(employees));
+                localStorage.setItem(`healthSchedule${collectionName}`, JSON.stringify(data));
             }
         }
-
-        async function loadEmployees() {
+        
+        async function loadData(collectionName, fallbackData) {
             if (userId && db) {
-                // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'employees_master', 'data');
+                const docRef = getDocRef(collectionName);
                 try {
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
-                        employees = JSON.parse(docSnap.data().data);
-                    } else {
-                        employees = [];
+                        return JSON.parse(docSnap.data().data);
                     }
                 } catch (error) {
-                    console.error("Erro ao carregar funcionários do Firestore:", error);
-                    employees = [];
+                    console.error(`Erro ao carregar ${collectionName} do Firestore:`, error);
                 }
             } else {
-                const storedEmployees = localStorage.getItem('healthScheduleEmployees');
-                employees = storedEmployees ? JSON.parse(storedEmployees) : [];
+                const storedData = localStorage.getItem(`healthSchedule${collectionName}`);
+                if (storedData) return JSON.parse(storedData);
             }
+            return fallbackData;
+        }
+
+        function saveEmployees() { saveData('employees_master', employees); }
+        async function loadEmployees() {
+            employees = await loadData('employees_master', []);
             renderEmployeeList();
             renderSchedule();
         }
@@ -482,43 +512,27 @@
         function saveMonthlyObservations() {
             const key = `${currentYear}-${currentMonth + 1}`;
             monthlyObservations[key] = document.getElementById('monthlyObservations').value;
-            if (userId && db) {
-                // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations', 'data');
-                setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
-                    .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
-            } else {
-                localStorage.setItem('healthScheduleObservations', JSON.stringify(monthlyObservations));
-            }
+            saveData('observations', monthlyObservations);
         }
 
         async function loadMonthlyObservations() {
-            if (userId && db) {
-                // CORRIGIDO: Referência do documento ajustada para o caminho correto
-                const docRef = doc(db, 'artifacts', appId, 'users', userId, 'observations', 'data');
-                try {
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        monthlyObservations = JSON.parse(docSnap.data().data);
-                    } else {
-                        monthlyObservations = {};
-                    }
-                } catch (error) {
-                    console.error("Erro ao carregar observações do Firestore:", error);
-                    monthlyObservations = {};
-                }
-            } else {
-                const storedObservations = localStorage.getItem('healthScheduleObservations');
-                monthlyObservations = storedObservations ? JSON.parse(storedObservations) : {};
-            }
+            monthlyObservations = await loadData('observations', {});
             const key = `${currentYear}-${currentMonth + 1}`;
             document.getElementById('monthlyObservations').value = monthlyObservations[key] || '';
         }
+        
+        function saveSiglas() { saveData('custom_siglas', customSiglas); }
+        async function loadSiglas() {
+            const loadedSiglas = await loadData('custom_siglas', []);
+            if (loadedSiglas.length > 0) {
+                customSiglas = loadedSiglas;
+            }
+        }
 
-        // New function to save both employees and observations
         function saveAllData() {
             saveEmployees();
             saveMonthlyObservations();
+            saveSiglas();
             window.showMessageBox('Escala salva com sucesso!');
         }
 
@@ -531,6 +545,13 @@
             const dayOfWeek = date.getDay();
             return dayOfWeek === 0 || dayOfWeek === 6; // Sunday (0) or Saturday (6)
         }
+        
+        // Brazilian National Holidays (example for 2025)
+        const nationalHolidays = [
+            '2025-01-01', '2025-03-03', '2025-03-04', '2025-04-18', '2025-04-21', 
+            '2025-05-01', '2025-06-19', '2025-09-07', '2025-10-12', '2025-11-02', 
+            '2025-11-15', '2025-12-25'
+        ];
 
         function isHoliday(year, month, day) {
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -540,24 +561,34 @@
         function isVacation(employee, year, month, day) {
             const currentDate = new Date(year, month, day);
             if (!employee.vacations) return false;
-
             for (const vacation of employee.vacations) {
                 const startDate = new Date(vacation.start);
                 const endDate = new Date(vacation.end);
-                // Set hours to 0 to compare only dates
                 startDate.setHours(0,0,0,0);
                 endDate.setHours(0,0,0,0);
                 currentDate.setHours(0,0,0,0);
-
-                if (currentDate >= startDate && currentDate <= endDate) {
-                    return true;
-                }
+                if (currentDate >= startDate && currentDate <= endDate) return true;
             }
             return false;
         }
 
+        function isLeave(employee, year, month, day, type) {
+            const currentDate = new Date(year, month, day);
+            const leaves = employee.leaves || [];
+            for (const leave of leaves) {
+                if (leave.type === type) {
+                    const startDate = new Date(leave.start);
+                    const endDate = new Date(leave.end);
+                    startDate.setHours(0,0,0,0);
+                    endDate.setHours(0,0,0,0);
+                    currentDate.setHours(0,0,0,0);
+                    if (currentDate >= startDate && currentDate <= endDate) return true;
+                }
+            }
+            return false;
+        }
+        
         // --- Render Functions ---
-
         function renderCurrentMonthYear() {
             const date = new Date(currentYear, currentMonth);
             document.getElementById('currentMonthYear').textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
@@ -575,21 +606,25 @@
             }
         }
 
-        function sortEmployeesByRole(empArray) {
-            // Sort by role: Técnicos first, then Enfermeiros, then others alphabetically
+        function sortEmployees(empArray) {
             return [...empArray].sort((a, b) => {
                 const roleA = a.role.toLowerCase();
                 const roleB = b.role.toLowerCase();
+                const shiftA = a.workShift || '';
+                const shiftB = b.workShift || '';
 
-                // Prioritize "Técnico"
-                if (roleA.includes('técnico') && !roleB.includes('técnico')) return -1;
-                if (!roleA.includes('técnico') && roleB.includes('técnico')) return 1;
+                // 1. Sort by role
+                if (roleA.includes('técnico de enfermagem') && !roleB.includes('técnico de enfermagem')) return -1;
+                if (!roleA.includes('técnico de enfermagem') && roleB.includes('técnico de enfermagem')) return 1;
 
-                // Then "Enfermeiro"
                 if (roleA.includes('enfermeiro') && !roleB.includes('enfermeiro')) return -1;
                 if (!roleA.includes('enfermeiro') && roleB.includes('enfermeiro')) return 1;
 
-                // Finally, sort by name for other roles or same role type
+                // 2. Sort by work shift (crescente)
+                if (shiftA < shiftB) return -1;
+                if (shiftA > shiftB) return 1;
+                
+                // 3. Sort by name
                 return a.name.localeCompare(b.name);
             });
         }
@@ -602,8 +637,7 @@
                 return;
             }
 
-            const sortedEmployees = sortEmployeesByRole(employees);
-
+            const sortedEmployees = sortEmployees(employees);
             sortedEmployees.forEach(emp => {
                 const li = document.createElement('li');
                 const teamColorClass = getTeamColorClass(emp.team);
@@ -640,8 +674,6 @@
             // Add day headers
             for (let i = 1; i <= daysInMonth; i++) {
                 const th = document.createElement('th');
-                const date = new Date(currentYear, currentMonth, i);
-                const dayOfWeek = date.getDay(); // 0 for Sunday, 6 for Saturday
                 th.textContent = i;
                 if (isWeekend(currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i)) {
                     th.classList.add('weekend');
@@ -649,7 +681,7 @@
                 scheduleHeader.appendChild(th);
             }
 
-            const sortedEmployees = sortEmployeesByRole(employees);
+            const sortedEmployees = sortEmployees(employees);
 
             // Add employee rows
             sortedEmployees.forEach(emp => {
@@ -657,26 +689,25 @@
                 const teamColorClass = getTeamColorClass(emp.team);
                 tr.innerHTML = `
                     <td class="font-medium text-blue-600 cursor-pointer ${teamColorClass}" onclick="window.openSiglaVacationModal('${emp.id}')">
-                        ${emp.name} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${emp.team}</span>
+                        ${emp.name}
                     </td>
                     <td>${emp.role}</td>
                     <td>${emp.council}</td>
-                    <td>${emp.workShift || ''}</td> `;
+                    <td>${emp.workShift || ''}</td>
+                `;
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                     const td = document.createElement('td');
-                    td.setAttribute('data-employee-id', emp.id); // Add data attribute for employee ID
-                    td.setAttribute('data-date-key', dateKey); // Add data attribute for date key
-                    td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); }; // Click handler for day cells
+                    td.setAttribute('data-employee-id', emp.id);
+                    td.setAttribute('data-date-key', dateKey);
+                    td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); };
 
+                    // Handle Vacations (with cell merge)
                     if (isVacation(emp, currentYear, currentMonth, i)) {
                         td.classList.add('vacation');
                         td.textContent = 'FÉRIAS';
-                        // Merge cells for vacation if it's the start of a vacation block
-                        const nextDayIsVacation = isVacation(emp, currentYear, currentMonth, i + 1);
                         const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
-
-                        if (!prevDayIsVacation && isVacation(emp, currentYear, currentMonth, i)) {
+                        if (!prevDayIsVacation) {
                             let span = 1;
                             let j = i + 1;
                             while (j <= daysInMonth && isVacation(emp, currentYear, currentMonth, j)) {
@@ -685,16 +716,19 @@
                             }
                             td.colSpan = span;
                             tr.appendChild(td);
-                            i += (span - 1); // Skip merged days
-                        } else if (prevDayIsVacation && isVacation(emp, currentYear, currentMonth, i)) {
-                            // Do nothing, this cell was already merged
-                        } else {
-                            tr.appendChild(td);
+                            i += (span - 1);
                         }
+                    } else if (isLeave(emp, currentYear, currentMonth, i, 'LM')) {
+                        td.classList.add('licenca');
+                        td.textContent = 'LM';
+                        tr.appendChild(td);
+                    } else if (isLeave(emp, currentYear, currentMonth, i, 'FO')) {
+                        td.classList.add('folga');
+                        td.textContent = 'FO';
+                        tr.appendChild(td);
                     } else {
-                        // Display multiple siglas joined by comma
                         const siglas = emp.schedule && emp.schedule[dateKey] ? emp.schedule[dateKey] : [];
-                        td.textContent = Array.isArray(siglas) ? siglas.join(', ') : siglas; // Handle old string format if any
+                        td.textContent = Array.isArray(siglas) ? siglas.join(', ') : siglas;
                         if (isWeekend(currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i)) {
                             td.classList.add('weekend');
                         }
@@ -703,11 +737,25 @@
                 }
                 scheduleBody.appendChild(tr);
             });
-            loadMonthlyObservations(); // Load observations for the rendered month
+            loadMonthlyObservations();
+        }
+
+        function renderSiglaCheckboxes(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            // Add custom siglas
+            customSiglas.forEach(sigla => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center';
+                label.innerHTML = `<input type="checkbox" name="sigla" value="${sigla.abbr}" class="mr-2"> ${sigla.abbr} (${sigla.name})`;
+                container.appendChild(label);
+            });
+            // Add special siglas
+            // We can add LM/FO here if needed for general month, but user wants them as date ranges
+            // Let's keep them separate to match the user's request.
         }
 
         // --- Employee Actions ---
-
         function addEmployee() {
             const name = document.getElementById('employeeName').value.trim();
             let role = document.getElementById('employeeRole').value.trim();
@@ -717,28 +765,30 @@
             const team = document.getElementById('employeeTeam').value.trim();
 
             if (role === 'Outro') {
-                role = customRole; // Use custom role if "Outro" is selected
+                role = customRole;
             }
 
             if (name && role && council && workShift && team) {
                 const newEmployee = {
-                    id: crypto.randomUUID(), // Unique ID for each employee
+                    id: crypto.randomUUID(),
                     name,
                     role,
                     council,
                     workShift,
-                    team, // Add team to employee object
-                    schedule: {}, // { 'YYYY-MM-DD': ['SIGLA1', 'SIGLA2'] }
-                    vacations: [] // [{ start: 'YYYY-MM-DD', end: 'YYYY-MM-DD' }]
+                    team,
+                    schedule: {},
+                    vacations: [],
+                    leaves: [] // New: stores LM/FO periods
                 };
                 employees.push(newEmployee);
                 saveEmployees();
                 renderEmployeeList();
                 renderSchedule();
+                // Clear form
                 document.getElementById('employeeName').value = '';
                 document.getElementById('employeeRole').value = '';
-                document.getElementById('customEmployeeRole').value = ''; // Clear custom role field
-                document.getElementById('customEmployeeRole').classList.add('hidden'); // Hide custom role field
+                document.getElementById('customEmployeeRole').value = '';
+                document.getElementById('customEmployeeRole').classList.add('hidden');
                 document.getElementById('employeeCouncil').value = '';
                 document.getElementById('employeeWorkShift').value = '';
                 document.getElementById('employeeTeam').value = '';
@@ -759,86 +809,38 @@
         }
 
         // --- Modal Functions ---
-
-        window.openSiglaVacationModal = function(employeeId, dateKey = null) {
+        window.openSiglaVacationModal = function(employeeId) {
             currentEditingEmployeeId = employeeId;
-            currentEditingDateKey = dateKey; // Store the dateKey
             const employee = employees.find(emp => emp.id === employeeId);
             if (employee) {
                 document.getElementById('modalEmployeeName').textContent = `Editar Escala de: ${employee.name}`;
                 document.getElementById('siglaVacationModal').classList.remove('hidden');
-                // Reset form fields
-                document.getElementById('vacationStart').value = '';
-                document.getElementById('vacationEnd').value = '';
+                document.getElementById('dateRangeStart').value = '';
+                document.getElementById('dateRangeEnd').value = '';
+                renderSiglaCheckboxes('siglaCheckboxesMonth');
 
-                const siglaSectionMonth = document.getElementById('siglaSectionMonth');
-                const siglaSectionDay = document.getElementById('siglaSectionDay');
-                const modalDayNumber = document.getElementById('modalDayNumber');
-
-                if (currentEditingDateKey) {
-                    // Editing a specific day
-                    siglaSectionMonth.classList.add('hidden');
-                    siglaSectionDay.classList.remove('hidden');
-                    modalDayNumber.textContent = currentEditingDateKey.split('-')[2]; // Extract day number
-
-                    // Pre-check siglas for the specific day
-                    const checkboxesDay = document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]');
-                    checkboxesDay.forEach(cb => cb.checked = false); // Uncheck all first
-
-                    const siglasForDay = employee.schedule && employee.schedule[currentEditingDateKey] ? employee.schedule[currentEditingDateKey] : [];
+                // Pre-check siglas for the month based on existing data
+                const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]');
+                checkboxesMonth.forEach(cb => cb.checked = false);
+                const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+                const currentMonthSiglas = new Set();
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    const siglasForDay = employee.schedule && employee.schedule[dateKey] ? employee.schedule[dateKey] : [];
                     if (Array.isArray(siglasForDay)) {
-                        siglasForDay.forEach(sigla => {
-                            const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${sigla}"]`);
-                            if (checkbox) {
-                                checkbox.checked = true;
-                            }
-                        });
-                    } else if (typeof siglasForDay === 'string' && siglasForDay !== '') {
-                        // Handle old string format: treat as a single sigla
-                        const checkbox = document.querySelector(`#siglaCheckboxesDay input[value="${siglasForDay}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
+                        siglasForDay.forEach(sigla => currentMonthSiglas.add(sigla));
                     }
-
-                } else {
-                    // Editing general monthly schedule (from employee name click)
-                    siglaSectionMonth.classList.remove('hidden');
-                    siglaSectionDay.classList.add('hidden');
-
-                    // Clear and pre-check siglas based on current month's schedule for this employee
-                    const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]');
-                    checkboxesMonth.forEach(cb => cb.checked = false); // Uncheck all first
-
-                    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-                    const currentMonthSiglas = new Set(); // Use a Set to store unique siglas for the month
-
-                    for (let i = 1; i <= daysInMonth; i++) {
-                        const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                        const siglasForDay = employee.schedule && employee.schedule[dateKey] ? employee.schedule[dateKey] : [];
-                        if (Array.isArray(siglasForDay)) {
-                            // Exclude FO and LM from general month view pre-check
-                            siglasForDay.filter(s => s !== 'FO' && s !== 'LM').forEach(sigla => currentMonthSiglas.add(s));
-                        } else if (typeof siglasForDay === 'string' && siglasForDay !== '' && siglasForDay !== 'FO' && siglasForDay !== 'LM') {
-                            // Handle old string format: treat as a single sigla
-                            currentMonthSiglas.add(siglasForDay);
-                        }
-                    }
-
-                    currentMonthSiglas.forEach(sigla => {
-                        const checkbox = document.querySelector(`#siglaCheckboxesMonth input[value="${sigla}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
-                    });
                 }
+                currentMonthSiglas.forEach(sigla => {
+                    const checkbox = document.querySelector(`#siglaCheckboxesMonth input[value="${sigla}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
             }
         }
 
         window.closeSiglaVacationModal = function() {
             document.getElementById('siglaVacationModal').classList.add('hidden');
             currentEditingEmployeeId = null;
-            currentEditingDateKey = null; // Clear the dateKey
         }
 
         function applySiglaMonth() {
@@ -857,11 +859,8 @@
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                if (!isWeekend(currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i)) {
-                    // Preserve FO/LM if they were set for a specific day
-                    const existingSiglas = employee.schedule[dateKey] || [];
-                    const preservedSiglas = Array.isArray(existingSiglas) ? existingSiglas.filter(s => s === 'FO' || s === 'LM') : [];
-                    employee.schedule[dateKey] = [...new Set([...preservedSiglas, ...selectedSiglas])]; // Combine and remove duplicates
+                if (!isWeekend(currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i) && !isLeave(employee, currentYear, currentMonth, i, 'FO') && !isLeave(employee, currentYear, currentMonth, i, 'LM')) {
+                    employee.schedule[dateKey] = selectedSiglas;
                 }
             }
             saveEmployees();
@@ -890,104 +889,63 @@
                 window.closeSiglaVacationModal();
             }
         }
-
-        function applySiglaDay() {
-            const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesDay input[type="checkbox"]:checked')).map(cb => cb.value);
-
-            if (selectedSiglas.length === 0) {
-                window.showMessageBox('Por favor, selecione ao menos uma sigla.', 3000);
+        
+        function applyLeaveOrVacation(type) {
+            const startDate = document.getElementById('dateRangeStart').value;
+            const endDate = document.getElementById('dateRangeEnd').value;
+            
+            if (!startDate || !endDate) {
+                window.showMessageBox(`Por favor, selecione as datas de início e fim.`, 4000);
                 return;
             }
-            if (!currentEditingDateKey) {
-                window.showMessageBox('Erro: Dia não selecionado para aplicar sigla.', 3000);
-                return;
-            }
-
+            
             const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
             if (employeeIndex === -1) return;
-
             const employee = employees[employeeIndex];
-
-            // For single day, we can overwrite or combine if desired. For FO/LM, usually overwrite.
-            // Let's assume for single day, we replace existing siglas with selected ones.
-            employee.schedule[currentEditingDateKey] = selectedSiglas;
-
-            saveEmployees();
-            renderSchedule();
-            window.showMessageBox(`Sigla(s) aplicada(s) para o dia ${currentEditingDateKey.split('-')[2]}.`);
-            window.closeSiglaVacationModal();
-        }
-
-        function clearSiglasForDay() {
-             if (!currentEditingDateKey) {
-                window.showMessageBox('Erro: Dia não selecionado para limpar sigla.', 3000);
-                return;
-            }
-            if (confirm(`Tem certeza que deseja limpar as siglas para o dia ${currentEditingDateKey.split('-')[2]}?`)) {
-                const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-                if (employeeIndex === -1) return;
-
-                const employee = employees[employeeIndex];
-                if (employee.schedule && employee.schedule[currentEditingDateKey]) {
-                    delete employee.schedule[currentEditingDateKey];
-                }
-                saveEmployees();
-                renderSchedule();
-                window.showMessageBox(`Siglas para o dia ${currentEditingDateKey.split('-')[2]} limpas.`);
-                window.closeSiglaVacationModal();
-            }
-        }
-
-
-        function applyVacation() {
-            const vacationStart = document.getElementById('vacationStart').value;
-            const vacationEnd = document.getElementById('vacationEnd').value;
-
-            if (!vacationStart || !vacationEnd) {
-                window.showMessageBox('Por favor, selecione as datas de início e fim das férias.', 4000);
-                return;
-            }
-
-            const startDate = new Date(vacationStart);
-            const endDate = new Date(vacationEnd);
-
-            if (startDate > endDate) {
-                window.showMessageBox('A data de início das férias não pode ser posterior à data de fim.', 4000);
-                return;
-            }
-
-            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
-            if (employeeIndex === -1) return;
-
-            const employee = employees[employeeIndex];
-            if (!employee.vacations) employee.vacations = [];
-
-            // Clear any existing schedule entries within the vacation period
+            
+            // Clear any existing schedule entries within the period
             let tempDate = new Date(startDate);
-            while (tempDate <= endDate) {
+            const end = new Date(endDate);
+            while (tempDate <= end) {
                 const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
-                delete employee.schedule[dateKey];
+                if (employee.schedule && employee.schedule[dateKey]) {
+                    delete employee.schedule[dateKey];
+                }
                 tempDate.setDate(tempDate.getDate() + 1);
             }
-
-            // Add the new vacation period
-            employee.vacations.push({ start: vacationStart, end: vacationEnd });
+            
+            if (type === 'vacation') {
+                if (!employee.vacations) employee.vacations = [];
+                employee.vacations.push({ start: startDate, end: endDate });
+                window.showMessageBox('Férias aplicadas com sucesso!');
+            } else {
+                if (!employee.leaves) employee.leaves = [];
+                employee.leaves.push({ start: startDate, end: endDate, type: type.toUpperCase() });
+                window.showMessageBox(`${type === 'folga' ? 'Folga' : 'Licença Médica'} aplicada com sucesso!`);
+            }
+            
             saveEmployees();
             renderSchedule();
-            window.showMessageBox('Férias aplicadas com sucesso!');
             window.closeSiglaVacationModal();
         }
 
         function clearVacation() {
             const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
             if (employeeIndex === -1) return;
-
-            const employee = employees[employeeIndex];
-            employee.vacations = []; // Clear all vacations for this employee
-
+            employees[employeeIndex].vacations = [];
             saveEmployees();
             renderSchedule();
             window.showMessageBox('Férias do funcionário limpas.');
+            window.closeSiglaVacationModal();
+        }
+        
+        function clearLeave() {
+            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
+            if (employeeIndex === -1) return;
+            employees[employeeIndex].leaves = [];
+            saveEmployees();
+            renderSchedule();
+            window.showMessageBox('Licenças e folgas do funcionário limpas.');
             window.closeSiglaVacationModal();
         }
 
@@ -997,18 +955,154 @@
                 if (employeeIndex === -1) return;
 
                 const employee = employees[employeeIndex];
-                employee.schedule = {}; // Clear all schedule
-                employee.vacations = []; // Clear all vacations
-
+                employee.schedule = {};
+                employee.vacations = [];
+                employee.leaves = [];
                 saveEmployees();
                 renderSchedule();
                 window.showMessageBox('Escala e férias do funcionário limpas.');
                 window.closeSiglaVacationModal();
             }
         }
+        
+        // --- Sigla Management Functions ---
+        window.openManageSiglasModal = function() {
+            document.getElementById('manageSiglasModal').classList.remove('hidden');
+            renderSiglasList();
+        }
 
+        window.closeManageSiglasModal = function() {
+            document.getElementById('manageSiglasModal').classList.add('hidden');
+            // Clear input fields
+            document.getElementById('siglaAbbr').value = '';
+            document.getElementById('siglaName').value = '';
+            document.getElementById('siglaColor').value = '';
+        }
+
+        function addSigla() {
+            const abbr = document.getElementById('siglaAbbr').value.trim().toUpperCase();
+            const name = document.getElementById('siglaName').value.trim();
+            const color = document.getElementById('siglaColor').value.trim();
+            
+            if (abbr && name && color) {
+                customSiglas.push({ id: crypto.randomUUID(), abbr, name, color });
+                saveSiglas();
+                renderSiglasList();
+                window.showMessageBox('Sigla adicionada com sucesso!');
+                // Clear input fields
+                document.getElementById('siglaAbbr').value = '';
+                document.getElementById('siglaName').value = '';
+                document.getElementById('siglaColor').value = '';
+            } else {
+                window.showMessageBox('Por favor, preencha todos os campos da sigla.', 3000);
+            }
+        }
+
+        window.deleteSigla = function(id) {
+            if (confirm('Tem certeza que deseja excluir esta sigla?')) {
+                customSiglas = customSiglas.filter(s => s.id !== id);
+                saveSiglas();
+                renderSiglasList();
+                window.showMessageBox('Sigla excluída.');
+            }
+        }
+        
+        function renderSiglasList() {
+            const siglasUl = document.getElementById('siglasUl');
+            siglasUl.innerHTML = '';
+            customSiglas.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
+                li.innerHTML = `
+                    <div class="flex-grow">
+                        <span class="font-medium text-blue-600">${s.abbr}</span>
+                        <span class="text-sm text-gray-500 ml-2">(${s.name})</span>
+                        <span class="text-xs text-gray-400 ml-2">Cor: ${s.color}</span>
+                    </div>
+                    <div>
+                        <button onclick="window.deleteSigla('${s.id}')" class="btn-danger ml-2">Excluir</button>
+                    </div>
+                `;
+                siglasUl.appendChild(li);
+            });
+        }
+        
+        // --- Transcribe Functionality ---
+        function copyScheduleToNextMonth() {
+            if (employees.length === 0) {
+                window.showMessageBox('Não há funcionários para transcrever a escala.', 3000);
+                return;
+            }
+            if (confirm('Tem certeza que deseja transcrever a escala atual para o próximo mês? Isso substituirá a escala existente do próximo mês.')) {
+                let nextMonth = currentMonth + 1;
+                let nextYear = currentYear;
+                if (nextMonth > 11) {
+                    nextMonth = 0;
+                    nextYear++;
+                }
+                const nextMonthKey = `${nextYear}-${nextMonth + 1}`;
+                const currentMonthKey = `${currentYear}-${currentMonth + 1}`;
+                
+                const daysInCurrentMonth = getDaysInMonth(currentYear, currentMonth);
+                const daysInNextMonth = getDaysInMonth(nextYear, nextMonth);
+
+                employees.forEach(emp => {
+                    const newSchedule = {};
+                    const newLeaves = [];
+                    const newVacations = [];
+                    
+                    for (let i = 1; i <= daysInNextMonth; i++) {
+                        // Check for LM/FO/Vacations first
+                        const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                        
+                        // Copy day-by-day siglas
+                        const currentDay = i > daysInCurrentMonth ? daysInCurrentMonth : i;
+                        const currentMonthDateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+                        if (emp.schedule[currentMonthDateKey]) {
+                             newSchedule[nextMonthDateKey] = emp.schedule[currentMonthDateKey];
+                        }
+                    }
+                    
+                    // Copy LM/FO/Vacations to the next month with updated dates
+                    if (emp.vacations) {
+                        emp.vacations.forEach(vac => {
+                            const newStart = new Date(vac.start);
+                            const newEnd = new Date(vac.end);
+                            newStart.setMonth(newStart.getMonth() + 1);
+                            newEnd.setMonth(newEnd.getMonth() + 1);
+                            newVacations.push({ start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0] });
+                        });
+                    }
+                    if (emp.leaves) {
+                         emp.leaves.forEach(leave => {
+                            const newStart = new Date(leave.start);
+                            const newEnd = new Date(leave.end);
+                            newStart.setMonth(newStart.getMonth() + 1);
+                            newEnd.setMonth(newEnd.getMonth() + 1);
+                            newLeaves.push({ start: newStart.toISOString().split('T')[0], end: newEnd.toISOString().split('T')[0], type: leave.type });
+                        });
+                    }
+
+                    emp.schedule = newSchedule;
+                    emp.leaves = newLeaves;
+                    emp.vacations = newVacations;
+                });
+
+                // Copy observations
+                const currentObs = monthlyObservations[currentMonthKey] || '';
+                monthlyObservations[nextMonthKey] = currentObs;
+
+                saveAllData();
+                window.showMessageBox('Escala transcrita com sucesso para o próximo mês!');
+                // Move to next month view to show the transcribed schedule
+                currentMonth = nextMonth;
+                currentYear = nextYear;
+                renderSchedule();
+                loadMonthlyObservations();
+            }
+        }
+        
         // --- Print Functionality ---
-
         function printSchedule() {
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -1021,25 +1115,27 @@
                     <style>
                         body { font-family: 'Inter', sans-serif; margin: 20px; }
                         .printable-header { text-align: center; margin-bottom: 20px; font-size: 16px; }
-                        .printable-table-container { overflow: hidden; } /* Ensure table fits */
+                        .printable-table-container { overflow: hidden; }
                         .printable-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
                         .printable-table th, .printable-table td {
                             border: 1px solid #000;
                             padding: 4px;
                             text-align: center;
-                            font-size: 10px;
-                            white-space: normal; /* Allow wrapping for print */
-                            word-break: break-word; /* Break long words */
+                            font-size: 8px; /* Small font for print */
+                            white-space: normal;
+                            word-break: break-word;
                         }
                         .printable-table th { background-color: #e0e0e0; }
                         .printable-table .weekend, .printable-table .holiday { background-color: #ccc; }
                         .printable-table .vacation { background-color: #a7d9ff; font-weight: bold; }
+                        .printable-table .licenca { background-color: #fde68a; font-weight: bold; }
+                        .printable-table .folga { background-color: #9ca3af; color: #fff; font-weight: bold; }
                         .printable-legend {
                             font-size: 10px;
                             margin-top: 20px;
                             border-top: 1px solid #000;
                             padding-top: 10px;
-                            page-break-before: avoid; /* Avoid breaking page before legend */
+                            page-break-before: avoid;
                         }
                         .printable-legend ul {
                             display: flex;
@@ -1049,32 +1145,22 @@
                             margin: 0;
                         }
                         .printable-legend ul li {
-                            margin-right: 15px; /* Spacing between horizontal legend items */
-                            margin-bottom: 5px; /* Small vertical spacing for wrapping */
-                            white-space: nowrap; /* Keep each legend item on one line */
+                            margin-right: 15px;
+                            margin-bottom: 5px;
+                            white-space: nowrap;
                         }
                         .printable-legend p {
                             margin-top: 10px;
-                            word-wrap: break-word; /* Allow observations to wrap */
+                            word-wrap: break-word;
                         }
-                        /* Team Colors for Print */
                         .team-sol-print { background-color: #FFD700; color: #333; }
                         .team-verde-print { background-color: #32CD32; color: white; }
                         .team-vermelha-print { background-color: #FF4500; color: white; }
                         .team-azul-print { background-color: #1E90FF; color: white; }
                         .team-laranja-print { background-color: #FFA500; color: #333; }
                         .team-apoio-print { background-color: #D3D3D3; color: #333; }
-
-
-                        /* Column widths for print */
-                        .printable-table th:nth-child(1) { width: 12%; } /* Nome */
-                        .printable-table th:nth-child(2) { width: 8%; } /* Função */
-                        .printable-table th:nth-child(3) { width: 10%; } /* Conselho */
-                        .printable-table th:nth-child(4) { width: 8%; } /* Horário de Trabalho */
-                        .printable-table th:nth-child(n+5) { width: calc(62% / ${getDaysInMonth(currentYear, currentMonth)}); } /* Days */
-
                         @page {
-                            size: landscape; /* Default to landscape */
+                            size: landscape;
                             margin: 1cm;
                         }
                     </style>
@@ -1103,11 +1189,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${sortEmployeesByRole(employees).map(emp => {
+                                    ${sortEmployees(employees).map(emp => {
                                         let rowHtml = `<tr>
-                                            <td class="font-medium ${getTeamColorClass(emp.team)}-print">
-                                                ${emp.name} <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold">${emp.team}</span>
-                                            </td>
+                                            <td class="font-medium ${getTeamColorClass(emp.team)}-print">${emp.name}</td>
                                             <td>${emp.role}</td>
                                             <td>${emp.council}</td>
                                             <td>${emp.workShift || ''}</td>`;
@@ -1121,7 +1205,6 @@
                                             if (isVacation(emp, currentYear, currentMonth, i)) {
                                                 cellContent = 'FÉRIAS';
                                                 cellClasses = 'vacation';
-                                                // Check if this is the start of a vacation block for merging
                                                 const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
                                                 if (!prevDayIsVacation) {
                                                     let span = 1;
@@ -1131,10 +1214,17 @@
                                                         j++;
                                                     }
                                                     rowHtml += `<td colspan="${span}" class="${cellClasses}">${cellContent}</td>`;
-                                                    i += (span - 1); // Skip merged days
+                                                    i += (span - 1);
                                                 }
+                                            } else if (isLeave(emp, currentYear, currentMonth, i, 'LM')) {
+                                                cellContent = 'LM';
+                                                cellClasses = 'licenca';
+                                                rowHtml += `<td class="${cellClasses}">${cellContent}</td>`;
+                                            } else if (isLeave(emp, currentYear, currentMonth, i, 'FO')) {
+                                                cellContent = 'FO';
+                                                cellClasses = 'folga';
+                                                rowHtml += `<td class="${cellClasses}">${cellContent}</td>`;
                                             } else {
-                                                // Display multiple siglas joined by comma
                                                 const siglas = emp.schedule && emp.schedule[dateKey] ? emp.schedule[dateKey] : [];
                                                 cellContent = Array.isArray(siglas) ? siglas.join(', ') : siglas;
                                                 if (isDayWeekend || isDayHoliday) {
@@ -1152,17 +1242,9 @@
                         <div class="printable-legend">
                             <h3>Legenda:</h3>
                             <ul>
-                                <li><strong>F:</strong> Farmácia</li>
-                                <li><strong>SOE:</strong> Sala de Observação</li>
-                                <li><strong>P:</strong> Presente</li>
-                                <li><strong>CT:</strong> Curativo</li>
-                                <li><strong>BR:</strong> Acolhimento Baixo Risco</li>
+                                ${customSiglas.map(s => `<li><strong>${s.abbr}:</strong> ${s.name}</li>`).join('')}
                                 <li><strong>LM:</strong> Licença Médica</li>
                                 <li><strong>FO:</strong> Folga</li>
-                                <li><strong>E:</strong> ECG</li>
-                                <li><strong>V:</strong> Vacina</li>
-                                <li><strong>T:</strong> Totem</li>
-                                <li><strong>C:</strong> Consultórios</li>
                             </ul>
                             <p><strong>Observações:</strong> ${monthlyObservations[`${currentYear}-${currentMonth + 1}`] || 'Nenhuma observação para este mês.'}</p>
                         </div>
@@ -1177,68 +1259,55 @@
 
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', async () => {
-            // Initialize Firebase
             if (firebaseConfig) {
                 try {
                     const app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
-
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
-                            // Este é o bloco de código alterado:
-                            // Força o userId para o ID desejado, ignorando o gerado por signInAnonymously
-                            userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
+                            userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                         } else {
                             try {
-                                if (initialAuthToken) {
-                                    await signInWithCustomToken(auth, initialAuthToken);
-                                    userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
-                                } else {
-                                    const anonUser = await signInAnonymously(auth);
-                                    // Mesmo ao fazer login anónimamente, forçamos o userId para o principal
-                                    userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
-                                }
+                                const anonUser = await signInAnonymously(auth);
+                                userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                             } catch (error) {
                                 console.error("Erro ao autenticar no Firebase:", error);
                                 window.showMessageBox(`Erro de autenticação: ${error.message}`, 5000);
-                                // Fallback para um userId fixo se a autenticação falhar
-                                userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
+                                userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                             }
                         }
                         isAuthReady = true;
-                        // Load data only after auth is ready and userId is set
-                        loadEmployees();
-                        loadMonthlyObservations();
+                        await loadSiglas();
+                        await loadEmployees();
+                        await loadMonthlyObservations();
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase:", error);
                     window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Usando armazenamento local.`, 7000);
-                    // Fallback to localStorage if Firebase initialization fails
-                    userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI para localStorage também
+                    userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                     isAuthReady = true;
-                    loadEmployees();
-                    loadMonthlyObservations();
+                    await loadSiglas();
+                    await loadEmployees();
+                    await loadMonthlyObservations();
                 }
             } else {
-                // If no Firebase config, proceed with localStorage
-                userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
+                userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                 isAuthReady = true;
-                loadEmployees();
-                loadMonthlyObservations();
+                await loadSiglas();
+                await loadEmployees();
+                await loadMonthlyObservations();
             }
 
-            // Event listener for custom role field
             document.getElementById('employeeRole').addEventListener('change', function() {
                 const customRoleField = document.getElementById('customEmployeeRole');
                 if (this.value === 'Outro') {
                     customRoleField.classList.remove('hidden');
                 } else {
                     customRoleField.classList.add('hidden');
-                    customRoleField.value = ''; // Clear custom field if not 'Outro'
+                    customRoleField.value = '';
                 }
             });
-
 
             document.getElementById('addEmployeeBtn').addEventListener('click', addEmployee);
             document.getElementById('prevMonth').addEventListener('click', () => {
@@ -1248,7 +1317,7 @@
                     currentYear--;
                 }
                 renderSchedule();
-                loadMonthlyObservations(); // Reload observations for new month
+                loadMonthlyObservations();
             });
             document.getElementById('nextMonth').addEventListener('click', () => {
                 currentMonth++;
@@ -1257,23 +1326,25 @@
                     currentYear++;
                 }
                 renderSchedule();
-                loadMonthlyObservations(); // Reload observations for new month
+                loadMonthlyObservations();
             });
 
-            // Modified event listeners for sigla application based on context
             document.getElementById('applySiglaMonthBtn').addEventListener('click', applySiglaMonth);
             document.getElementById('clearSiglasMonthBtn').addEventListener('click', clearSiglasForMonth);
-            document.getElementById('applySiglaDayBtn').addEventListener('click', applySiglaDay); // New button for single day sigla
-            document.getElementById('clearSiglasDayBtn').addEventListener('click', clearSiglasForDay); // New button for clearing single day sigla
-
-            document.getElementById('applyVacationBtn').addEventListener('click', applyVacation);
+            document.getElementById('applyVacationBtn').addEventListener('click', () => applyLeaveOrVacation('vacation'));
+            document.getElementById('applyFolgaBtn').addEventListener('click', () => applyLeaveOrVacation('folga'));
+            document.getElementById('applyLicencaBtn').addEventListener('click', () => applyLeaveOrVacation('licenca'));
             document.getElementById('clearVacationBtn').addEventListener('click', clearVacation);
+            document.getElementById('clearLeaveBtn').addEventListener('click', clearLeave);
             document.getElementById('clearEmployeeScheduleBtn').addEventListener('click', clearEmployeeSchedule);
             document.getElementById('printScheduleBtn').addEventListener('click', printSchedule);
-            document.getElementById('saveScheduleBtn').addEventListener('click', saveAllData); // Event listener for the new save button
+            document.getElementById('transcribeScheduleBtn').addEventListener('click', copyScheduleToNextMonth);
+            document.getElementById('saveScheduleBtn').addEventListener('click', saveAllData);
+            document.getElementById('manageSiglasBtn').addEventListener('click', openManageSiglasModal);
             document.getElementById('monthlyObservations').addEventListener('input', saveMonthlyObservations);
+            
+            document.getElementById('addSiglaBtn').addEventListener('click', addSigla);
 
-            // Initial render
             renderCurrentMonthYear();
         });
     </script>
