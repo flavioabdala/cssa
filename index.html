@@ -383,7 +383,6 @@
 
     <script type="module">
         // Global variables for Firebase configuration and app ID
-        // *** ESTAS SÃO AS LINHAS CORRIGIDAS ***
         const appId = "1:1040621794903:web:61518f984286e11fb29512"; // SEU APP ID DO FIREBASE (CORRIGIDO)
         const firebaseConfig = {
             apiKey: "AIzaSyALs6IeL242UJH7uXpa-0mQq_CN_RA-xWA",
@@ -395,7 +394,6 @@
             measurementId: "G-YHH987DD5J"
         };
         const initialAuthToken = null; // Mantenha como null para autenticação anónima padrão
-        // ************************************
 
         let db;
         let auth;
@@ -449,7 +447,6 @@
 
         function saveEmployees() {
             if (userId && db) {
-                // CORRIGIDO: O caminho agora é artifacts/${appId}/shared_schedule/${userId}/employees_master
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule/${userId}`, 'employees_master');
                 setDoc(docRef, { data: JSON.stringify(employees) })
                     .catch(error => console.error("Erro ao salvar funcionários no Firestore:", error));
@@ -460,7 +457,6 @@
 
         async function loadEmployees() {
             if (userId && db) {
-                // CORRIGIDO: O caminho agora é artifacts/${appId}/shared_schedule/${userId}/employees_master
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule/${userId}`, 'employees_master');
                 try {
                     const docSnap = await getDoc(docRef);
@@ -485,7 +481,6 @@
             const key = `${currentYear}-${currentMonth + 1}`;
             monthlyObservations[key] = document.getElementById('monthlyObservations').value;
             if (userId && db) {
-                // CORRIGIDO: O caminho agora é artifacts/${appId}/shared_schedule/${userId}/observations
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule/${userId}`, 'observations');
                 setDoc(docRef, { data: JSON.stringify(monthlyObservations) })
                     .catch(error => console.error("Erro ao salvar observações no Firestore:", error));
@@ -496,7 +491,6 @@
 
         async function loadMonthlyObservations() {
             if (userId && db) {
-                // CORRIGIDO: O caminho agora é artifacts/${appId}/shared_schedule/${userId}/observations
                 const docRef = doc(db, `artifacts/${appId}/shared_schedule/${userId}`, 'observations');
                 try {
                     const docSnap = await getDoc(docRef);
@@ -1188,22 +1182,24 @@
 
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
-                            userId = user.uid;
+                            // Este é o bloco de código alterado:
+                            // Força o userId para o ID desejado, ignorando o gerado por signInAnonymously
+                            userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
                         } else {
-                            // Sign in anonymously if no user is logged in
                             try {
                                 if (initialAuthToken) {
                                     await signInWithCustomToken(auth, initialAuthToken);
-                                    userId = auth.currentUser.uid;
+                                    userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
                                 } else {
                                     const anonUser = await signInAnonymously(auth);
-                                    userId = anonUser.user.uid;
+                                    // Mesmo ao fazer login anónimamente, forçamos o userId para o principal
+                                    userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
                                 }
                             } catch (error) {
                                 console.error("Erro ao autenticar no Firebase:", error);
                                 window.showMessageBox(`Erro de autenticação: ${error.message}`, 5000);
-                                // Fallback to a random UUID if anonymous sign-in fails
-                                userId = crypto.randomUUID();
+                                // Fallback para um userId fixo se a autenticação falhar
+                                userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
                             }
                         }
                         isAuthReady = true;
@@ -1215,14 +1211,14 @@
                     console.error("Erro ao inicializar Firebase:", error);
                     window.showMessageBox(`Erro ao inicializar o banco de dados: ${error.message}. Usando armazenamento local.`, 7000);
                     // Fallback to localStorage if Firebase initialization fails
-                    userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
+                    userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI para localStorage também
                     isAuthReady = true;
                     loadEmployees();
                     loadMonthlyObservations();
                 }
             } else {
                 // If no Firebase config, proceed with localStorage
-                userId = crypto.randomUUID(); // Generate a dummy userId for localStorage context
+                userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83"; // <<-- UID PRINCIPAL FIXO AQUI
                 isAuthReady = true;
                 loadEmployees();
                 loadMonthlyObservations();
