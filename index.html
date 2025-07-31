@@ -129,6 +129,7 @@
         .schedule-table th {
             background-color: #e2e8f0; /* Light gray header */
             font-weight: 600;
+            cursor: pointer; /* To show that the day column is clickable */
         }
         .schedule-table tbody tr:hover {
             background-color: #f8fafc; /* Lighter on hover */
@@ -243,11 +244,12 @@
                 text-align: center;
                 white-space: normal;
                 word-break: break-word; /* Quebra palavras longas */
+                height: 12px; /* Reduzindo a altura da linha */
             }
-            /* AJUSTE: Proporção das colunas para impressão */
-            .printable-table th:nth-child(1), .printable-table td:nth-child(1) { width: 25%; } /* Nome - Maior */
-            .printable-table th:nth-child(2), .printable-table td:nth-child(2) { width: 8%; } /* Função */
-            .printable-table th:nth-child(3), .printable-table td:nth-child(3) { width: 8%; } /* Conselho */
+            /* AJUSTE: Proporção das colunas para impressão (agora mais finas) */
+            .printable-table th:nth-child(1), .printable-table td:nth-child(1) { width: 25%; } /* Nome */
+            .printable-table th:nth-child(2), .printable-table td:nth-child(2) { width: 12%; } /* Função */
+            .printable-table th:nth-child(3), .printable-table td:nth-child(3) { width: 9%; } /* Conselho */
             .printable-table th:nth-child(4), .printable-table td:nth-child(4) { width: 8%; } /* Horário de Trabalho */
             .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) { /* Dias - Ocupam o restante do espaço */
                 width: auto;
@@ -449,6 +451,7 @@
         let employees = [];
         let currentEditingEmployeeId = null;
         let monthlyObservations = {};
+        let customHolidays = {}; // New: Custom holidays per month
         let customSiglas = [
             { id: '1', abbr: 'F', name: 'Farmácia', color: '#fca5a5' }, // Red-300
             { id: '2', abbr: 'S', name: 'Sala de Observação', color: '#fdba74' }, // Orange-300
@@ -535,11 +538,17 @@
                 customSiglas = loadedSiglas;
             }
         }
+        
+        function saveCustomHolidays() { saveData('custom_holidays', customHolidays); }
+        async function loadCustomHolidays() {
+            customHolidays = await loadData('custom_holidays', {});
+        }
 
         function saveAllData() {
             saveEmployees();
             saveMonthlyObservations();
             saveSiglas();
+            saveCustomHolidays();
             window.showMessageBox('Escala salva com sucesso!');
         }
 
@@ -562,7 +571,10 @@
 
         function isHoliday(year, month, day) {
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            return nationalHolidays.includes(dateString);
+            const isNational = nationalHolidays.includes(dateString);
+            const key = `${year}-${month + 1}`;
+            const isCustom = customHolidays[key] && customHolidays[key].includes(day);
+            return isNational || isCustom;
         }
 
         // CORREÇÃO: Função para verificar se está de férias, com fuso horário corrigido
@@ -624,7 +636,7 @@
         }
 
         function sortEmployees(empArray) {
-            // CORREÇÃO: Nova lógica de ordenação para priorizar "Técnico de Enfermagem"
+            // Nova lógica de ordenação: 1. Técnico de Enfermagem, 2. Enfermeiro, 3. Outros, 4. Nome
             const roleOrder = {
                 'Técnico de Enfermagem': 1,
                 'Enfermeiro': 2
@@ -637,11 +649,6 @@
                 if (orderA !== orderB) {
                     return orderA - orderB;
                 }
-
-                const shiftA = a.workShift || '';
-                const shiftB = b.workShift || '';
-                if (shiftA < shiftB) return -1;
-                if (shiftA > shiftB) return 1;
                 
                 return a.name.localeCompare(b.name);
             });
@@ -693,6 +700,9 @@
             for (let i = 1; i <= daysInMonth; i++) {
                 const th = document.createElement('th');
                 th.textContent = i;
+                const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                th.setAttribute('data-day', i); // Add data attribute to identify the day
+                th.onclick = function() { toggleCustomHoliday(i); }; // Add click handler
                 if (isWeekend(currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i)) {
                     th.classList.add('weekend');
                 }
@@ -882,6 +892,9 @@
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 if (!isWeekend(currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i) && !isLeave(employee, currentYear, currentMonth, i, 'FO') && !isLeave(employee, currentYear, currentMonth, i, 'LM')) {
                     employee.schedule[dateKey] = selectedSiglas;
+                } else if (isHoliday(currentYear, currentMonth, i)) {
+                    // Clear existing siglas on custom holidays
+                    delete employee.schedule[dateKey];
                 }
             }
             saveEmployees();
@@ -1047,6 +1060,34 @@
                 siglasUl.appendChild(li);
             });
         }
+
+        // --- Dynamic Holiday Functionality ---
+        function toggleCustomHoliday(day) {
+            const key = `${currentYear}-${currentMonth + 1}`;
+            const isDayCustomHoliday = customHolidays[key] && customHolidays[key].includes(day);
+
+            if (isDayCustomHoliday) {
+                if (confirm(`Deseja remover o feriado do dia ${day}?`)) {
+                    customHolidays[key] = customHolidays[key].filter(d => d !== day);
+                    if (customHolidays[key].length === 0) {
+                        delete customHolidays[key];
+                    }
+                    saveCustomHolidays();
+                    renderSchedule();
+                    window.showMessageBox(`Feriado do dia ${day} removido.`);
+                }
+            } else {
+                if (confirm(`Deseja marcar o dia ${day} como feriado?`)) {
+                    if (!customHolidays[key]) {
+                        customHolidays[key] = [];
+                    }
+                    customHolidays[key].push(day);
+                    saveCustomHolidays();
+                    renderSchedule();
+                    window.showMessageBox(`Dia ${day} marcado como feriado.`);
+                }
+            }
+        }
         
         // --- Transcribe Functionality ---
         function copyScheduleToNextMonth() {
@@ -1113,6 +1154,12 @@
                 const currentObs = monthlyObservations[currentMonthKey] || '';
                 monthlyObservations[nextMonthKey] = currentObs;
 
+                // Copy custom holidays
+                if (customHolidays[currentMonthKey]) {
+                    customHolidays[nextMonthKey] = [...customHolidays[currentMonthKey]];
+                }
+
+
                 saveAllData();
                 window.showMessageBox('Escala transcrita com sucesso para o próximo mês!');
                 // Move to next month view to show the transcribed schedule
@@ -1140,11 +1187,12 @@
                         .printable-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
                         .printable-table th, .printable-table td {
                             border: 1px solid #000;
-                            padding: 4px;
+                            padding: 1px; /* Padding menor ainda */
                             text-align: center;
-                            font-size: 8px; /* Small font for print */
+                            font-size: 7px; /* Smallest font for print */
                             white-space: normal;
                             word-break: break-word;
+                            height: 10px; /* Reduzindo a altura da linha */
                         }
                         .printable-table th { background-color: #e0e0e0; }
                         .printable-table .weekend, .printable-table .holiday { background-color: #ccc; }
@@ -1152,10 +1200,10 @@
                         .printable-table .licenca { background-color: #fde68a; font-weight: bold; }
                         .printable-table .folga { background-color: #9ca3af; color: #fff; font-weight: bold; }
                         .printable-legend {
-                            font-size: 10px;
-                            margin-top: 20px;
+                            font-size: 8px;
+                            margin-top: 15px;
                             border-top: 1px solid #000;
-                            padding-top: 10px;
+                            padding-top: 8px;
                             page-break-before: avoid;
                         }
                         .printable-legend ul {
@@ -1180,6 +1228,14 @@
                         .team-azul-print { background-color: #1E90FF; color: white; }
                         .team-laranja-print { background-color: #FFA500; color: #333; }
                         .team-apoio-print { background-color: #D3D3D3; color: #333; }
+                        
+                        /* AJUSTE: Proporção das colunas para impressão (novos valores) */
+                        .printable-table th:nth-child(1), .printable-table td:nth-child(1) { width: 25%; }
+                        .printable-table th:nth-child(2), .printable-table td:nth-child(2) { width: 12%; }
+                        .printable-table th:nth-child(3), .printable-table td:nth-child(3) { width: 9%; }
+                        .printable-table th:nth-child(4), .printable-table td:nth-child(4) { width: 8%; }
+                        .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) { width: auto; }
+                        
                         @page {
                             size: landscape;
                             margin: 1cm;
@@ -1302,6 +1358,7 @@
                         await loadSiglas();
                         await loadEmployees();
                         await loadMonthlyObservations();
+                        await loadCustomHolidays();
                     });
                 } catch (error) {
                     console.error("Erro ao inicializar Firebase:", error);
@@ -1311,6 +1368,7 @@
                     await loadSiglas();
                     await loadEmployees();
                     await loadMonthlyObservations();
+                    await loadCustomHolidays();
                 }
             } else {
                 userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
@@ -1318,6 +1376,7 @@
                 await loadSiglas();
                 await loadEmployees();
                 await loadMonthlyObservations();
+                await loadCustomHolidays();
             }
 
             document.getElementById('employeeRole').addEventListener('change', function() {
