@@ -808,6 +808,8 @@
                             td.colSpan = span;
                             tr.appendChild(td);
                             i += (span - 1);
+                        } else {
+                            continue;
                         }
                     } else if (isLeave(emp, currentYear, currentMonth, i, 'LM')) {
                         td.classList.add('licenca');
