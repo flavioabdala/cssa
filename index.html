@@ -338,10 +338,10 @@
             <table id="scheduleTable" class="schedule-table">
                 <thead>
                     <tr id="scheduleHeader">
-                        <th class="w-1/6" id="headerName">Nome</th>
-                        <th class="w-1/12">Função</th>
+                        <th class="w-1/6 sortable" data-sort-key="name">Nome</th>
+                        <th class="w-1/12 sortable" data-sort-key="role">Função</th>
                         <th class="w-1/12">Conselho</th>
-                        <th class="w-1/12">Horário de Trabalho</th>
+                        <th class="w-1/12 sortable" data-sort-key="workShift">Horário de Trabalho</th>
                         </tr>
                 </thead>
                 <tbody id="scheduleBody">
@@ -501,7 +501,8 @@
         
         const specialSiglas = ['FO', 'LM'];
         const dayOfWeekLetters = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-        let sortDirection = 'asc'; // 'asc' or 'desc'
+        let sortDirection = {}; // Store sort direction for each column
+        let currentSortKey = 'name';
 
         // --- Utility Functions ---
         window.showMessageBox = function(message, duration = 3000) {
@@ -620,7 +621,6 @@
             return !isWeekend(employee, year, month, day) && !isHoliday(year, month, day);
         }
 
-        // CORREÇÃO: Função para verificar se está de férias, com fuso horário corrigido
         function isVacation(employee, year, month, day) {
             const currentDate = new Date(year, month, day);
             if (!employee.vacations) return false;
@@ -639,7 +639,6 @@
             return false;
         }
 
-        // CORREÇÃO: Função para verificar se está de licença ou folga, com fuso horário corrigido
         function isLeave(employee, year, month, day, type) {
             const currentDate = new Date(year, month, day);
             const leaves = employee.leaves || [];
@@ -677,23 +676,18 @@
                 default: return '';
             }
         }
-
-        function sortEmployees(empArray) {
-            // Nova lógica de ordenação: 1. Técnico de Enfermagem, 2. Enfermeiro, 3. Outros, 4. Nome
-            const roleOrder = {
-                'Técnico de Enfermagem': 1,
-                'Enfermeiro': 2
-            };
-
+        
+        // New: General sorting function
+        function sortEmployees(empArray, key, direction) {
             return [...empArray].sort((a, b) => {
-                const orderA = roleOrder[a.role] || 99;
-                const orderB = roleOrder[b.role] || 99;
+                const valueA = a[key] || '';
+                const valueB = b[key] || '';
 
-                if (orderA !== orderB) {
-                    return orderA - orderB;
+                if (direction === 'asc') {
+                    return valueA.localeCompare(valueB);
+                } else {
+                    return valueB.localeCompare(valueA);
                 }
-                
-                return a.name.localeCompare(b.name);
             });
         }
         
@@ -746,17 +740,25 @@
             const scheduleHeader = document.getElementById('scheduleHeader');
             const scheduleBody = document.getElementById('scheduleBody');
             scheduleHeader.innerHTML = `
-                <th class="w-1/6" id="headerName">Nome</th>
-                <th class="w-1/12">Função</th>
+                <th class="w-1/6 sortable" data-sort-key="name">Nome</th>
+                <th class="w-1/12 sortable" data-sort-key="role">Função</th>
                 <th class="w-1/12">Conselho</th>
-                <th class="w-1/12">Horário de Trabalho</th>
+                <th class="w-1/12 sortable" data-sort-key="workShift">Horário de Trabalho</th>
             `;
             scheduleBody.innerHTML = '';
             
-            const headerName = document.getElementById('headerName');
-            headerName.addEventListener('click', () => {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                renderSchedule();
+            // Add click event listeners to sortable headers
+            document.querySelectorAll('.sortable').forEach(header => {
+                header.addEventListener('click', () => {
+                    const sortKey = header.dataset.sortKey;
+                    if (currentSortKey === sortKey) {
+                        sortDirection[sortKey] = sortDirection[sortKey] === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSortKey = sortKey;
+                        sortDirection[sortKey] = 'asc';
+                    }
+                    renderSchedule();
+                });
             });
 
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -765,12 +767,11 @@
             for (let i = 1; i <= daysInMonth; i++) {
                 const th = document.createElement('th');
                 const date = new Date(currentYear, currentMonth, i);
-                const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+                const dayOfWeek = date.getDay();
                 const dayLetter = dayOfWeekLetters[dayOfWeek];
                 th.innerHTML = `${i} <div class="font-normal text-gray-500">${dayLetter}</div>`;
-                th.setAttribute('data-day', i); // Add data attribute to identify the day
-                th.onclick = function() { toggleCustomHoliday(i); }; // Add click handler
-                // For header, check if it's a holiday/normal weekend
+                th.setAttribute('data-day', i);
+                th.onclick = function() { toggleCustomHoliday(i); };
                 const isDayWeekend = new Date(currentYear, currentMonth, i).getDay() === 0 || new Date(currentYear, currentMonth, i).getDay() === 6;
                 if (isDayWeekend || isHoliday(currentYear, currentMonth, i)) {
                     th.classList.add('weekend');
@@ -779,13 +780,7 @@
             }
             
             const filteredEmployees = filterEmployees();
-            const sortedEmployees = [...filteredEmployees].sort((a,b) => {
-                if (sortDirection === 'asc') {
-                    return a.name.localeCompare(b.name);
-                } else {
-                    return b.name.localeCompare(a.name);
-                }
-            });
+            const sortedEmployees = sortEmployees(filteredEmployees, currentSortKey, sortDirection[currentSortKey] || 'asc');
 
             // Add employee rows
             sortedEmployees.forEach(emp => {
@@ -805,7 +800,6 @@
                     td.setAttribute('data-employee-id', emp.id);
                     td.setAttribute('data-date-key', dateKey);
                     
-                    // Handle Vacations (with cell merge)
                     if (isVacation(emp, currentYear, currentMonth, i)) {
                         td.classList.add('vacation');
                         td.textContent = 'FÉRIAS';
@@ -838,7 +832,6 @@
                             td.classList.add('weekend');
                         }
                         
-                        // New: Click handler for single day editing
                         td.addEventListener('click', (event) => {
                             editDaySchedule(event.target, emp.id, dateKey);
                         });
@@ -851,33 +844,28 @@
             loadMonthlyObservations();
         }
 
-        // New: Function to edit a single day's schedule
         function editDaySchedule(cell, employeeId, dateKey) {
             const employee = employees.find(e => e.id === employeeId);
             if (!employee) return;
 
-            // Check if the day is not a weekend, holiday, vacation, or leave
             const dateParts = dateKey.split('-').map(Number);
             const day = dateParts[2];
             if (!isWorkday(employee, currentYear, currentMonth, day) || isVacation(employee, currentYear, currentMonth, day) || isLeave(employee, currentYear, currentMonth, day, 'LM') || isLeave(employee, currentYear, currentMonth, day, 'FO')) {
-                 return; // Do not edit special days
+                 return;
             }
             
             const currentSiglas = cell.textContent;
 
-            // Create an input field
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'w-full text-center border rounded';
             input.value = currentSiglas;
             input.style.fontSize = '0.75rem';
             
-            // Replace the cell content with the input field
             cell.textContent = '';
             cell.appendChild(input);
             input.focus();
 
-            // Save function
             const saveSchedule = () => {
                 const newSiglas = input.value.trim().split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
                 
@@ -895,7 +883,6 @@
                 renderSchedule();
             };
 
-            // Event listener for saving
             input.addEventListener('blur', saveSchedule);
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -940,7 +927,7 @@
                     team,
                     schedule: {},
                     vacations: [],
-                    leaves: [] // New: stores LM/FO periods
+                    leaves: []
                 };
                 employees.push(newEmployee);
                 saveEmployees();
@@ -981,7 +968,6 @@
                 document.getElementById('dateRangeEnd').value = '';
                 renderSiglaCheckboxes('siglaCheckboxesMonth');
 
-                // Pre-check siglas for the month based on existing data
                 const checkboxesMonth = document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]');
                 checkboxesMonth.forEach(cb => cb.checked = false);
                 const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -1005,7 +991,6 @@
             currentEditingEmployeeId = null;
         }
 
-        // CORREÇÃO: Função para aplicar siglas do mês, corrigindo o erro de 'undefined' e a lógica
         function applySiglaMonth() {
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
             
@@ -1018,7 +1003,6 @@
             if (employeeIndex === -1) return;
             const employee = employees[employeeIndex];
 
-            // Garante que employee.schedule seja um objeto antes de usá-lo
             if (!employee.schedule) {
                 employee.schedule = {};
             }
@@ -1028,11 +1012,9 @@
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
 
-                // Só aplica as siglas se o dia não for final de semana, feriado, férias ou licença/folga
                 if (!isWeekend(employee, currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i) && !isLeave(employee, currentYear, currentMonth, i, 'FO') && !isLeave(employee, currentYear, currentMonth, i, 'LM')) {
                     employee.schedule[dateKey] = selectedSiglas;
                 } else {
-                    // Limpa a sigla para o dia se ele não for um dia útil
                     if (employee.schedule[dateKey]) {
                         delete employee.schedule[dateKey];
                     }
@@ -1065,7 +1047,6 @@
             }
         }
         
-        // CORREÇÃO: Aplica LM e FO com a data certa
         function applyLeaveOrVacation(type) {
             const startDate = document.getElementById('dateRangeStart').value;
             const endDate = document.getElementById('dateRangeEnd').value;
@@ -1079,7 +1060,6 @@
             if (employeeIndex === -1) return;
             const employee = employees[employeeIndex];
             
-            // Adiciona a licença/folga, sobrescrevendo outras entradas
             const newEntry = { start: startDate, end: endDate, type: type.toUpperCase() };
             
             if (type === 'vacation') {
@@ -1092,10 +1072,9 @@
                 window.showMessageBox(`${type === 'folga' ? 'Folga' : 'Licença Médica'} aplicada com sucesso!`);
             }
             
-            // Limpa a escala de sigla dentro do período selecionado
             let tempDate = new Date(startDate);
             const end = new Date(endDate);
-            end.setDate(end.getDate() + 1); // Garante que o último dia seja incluído
+            end.setDate(end.getDate() + 1);
             while (tempDate < end) {
                 const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
                 if (employee.schedule && employee.schedule[dateKey]) {
@@ -1109,7 +1088,6 @@
             window.closeSiglaVacationModal();
         }
         
-        // CORREÇÃO: Função para limpar férias apenas do mês atual
         function clearVacation() {
             if (confirm('Tem certeza que deseja limpar as férias deste funcionário no mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
@@ -1133,7 +1111,6 @@
             }
         }
 
-        // CORREÇÃO: Função para limpar licenças e folgas apenas do mês atual
         function clearLeave() {
             if (confirm('Tem certeza que deseja limpar as folgas e licenças deste funcionário no mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
@@ -1264,7 +1241,6 @@
             }
         }
         
-        // CORREÇÃO: Função para copiar a escala para o próximo mês, evitando a desconfiguração de quem está de férias
         function copyScheduleToNextMonth() {
             if (employees.length === 0) {
                 window.showMessageBox('Não há funcionários para copiar a escala.', 3000);
@@ -1286,7 +1262,6 @@
                         emp.schedule = {};
                     }
 
-                    // A nova lógica irá copiar a escala se houver pelo menos um dia útil preenchido no mês atual
                     const currentMonthWorkdays = {};
                     let hasWorkdaySchedule = false;
                     for (let j = 1; j <= getDaysInMonth(currentYear, currentMonth); j++) {
@@ -1300,13 +1275,11 @@
                         }
                     }
 
-                    // Se não houver escala preenchida para dias úteis (ex: funcionário de férias), pula a cópia e adiciona um aviso
                     if (!hasWorkdaySchedule) {
                         employeesToWarn.push(emp.name);
-                        return; // Pula este funcionário
+                        return;
                     }
                     
-                    // Copia a escala para o próximo mês
                     for (let i = 1; i <= daysInNextMonth; i++) {
                         const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                         
@@ -1319,7 +1292,6 @@
                                 delete emp.schedule[nextMonthDateKey];
                             }
                         } else if (!isWorkday(emp, nextYear, nextMonth, i) && emp.schedule && emp.schedule[nextMonthDateKey]) {
-                             // Se não é dia útil, garante que não há sigla, mas não altera férias/licença já existentes
                             delete emp.schedule[nextMonthDateKey];
                         }
                     }
@@ -1342,13 +1314,7 @@
         // --- Print Functionality ---
         function printSchedule() {
             const filteredEmployees = filterEmployees();
-            const filterName = document.getElementById('filterName').value.trim();
-            const filterRole = document.getElementById('filterRole').value.trim();
-            const filterWorkShift = document.getElementById('filterWorkShift').value.trim();
-            const filterTeam = document.getElementById('filterTeam').value.trim();
             
-            const filterInfo = `Filtros: Nome: ${filterName || 'Nenhum'}, Função: ${filterRole || 'Nenhum'}, Horário: ${filterWorkShift || 'Nenhum'}, Equipe: ${filterTeam || 'Nenhum'}`;
-
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
                 <!DOCTYPE html>
@@ -1356,18 +1322,20 @@
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Imprimir Escala - ${document.getElementById('currentMonthYear').textContent}</title>
+                    <title>Escala - ${document.getElementById('currentMonthYear').textContent}</title>
                     <style>
-                        body { font-family: 'Inter', sans-serif; margin: 20px; }
-                        .printable-header { text-align: center; margin-bottom: 20px; font-size: 16px; }
-                        .printable-filter-info { text-align: center; font-size: 10px; margin-bottom: 10px; }
-                        .printable-table-container { overflow: hidden; }
+                        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0.5cm; }
+                        .printable-content {
+                            box-sizing: border-box;
+                            overflow: hidden;
+                        }
+                        .printable-table-container { overflow: visible; }
                         .printable-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
                         .printable-table th, .printable-table td {
                             border: 1px solid #000;
                             padding: 1px;
                             text-align: center;
-                            font-size: 9px; /* Font size ajustada */
+                            font-size: 9px;
                             white-space: normal;
                             word-break: break-word;
                             height: 12px;
@@ -1417,7 +1385,7 @@
                         .printable-table td:nth-child(3) { width: 6%; font-weight: bold; color: #000; }
                         .printable-table th:nth-child(4) { width: 5%; }
                         .printable-table td:nth-child(4) { width: 5%; font-weight: bold; color: #000; }
-                        .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) { /* Dias - Ocupam o restante do espaço */
+                        .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) {
                             width: auto;
                         }
                         
@@ -1429,10 +1397,6 @@
                 </head>
                 <body>
                     <div class="printable-content">
-                        <div class="printable-header">
-                            <h2>Escala do Centro de Saúde - ${document.getElementById('currentMonthYear').textContent}</h2>
-                        </div>
-                        <div class="printable-filter-info">${filterInfo}</div>
                         <div class="printable-table-container">
                             <table class="printable-table">
                                 <thead>
@@ -1455,7 +1419,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${sortEmployees(filteredEmployees).map(emp => {
+                                    ${sortEmployees(filteredEmployees, currentSortKey, sortDirection[currentSortKey] || 'asc').map(emp => {
                                         let rowHtml = `<tr>
                                             <td class="font-medium">${emp.name}</td>
                                             <td>${emp.role}</td>
@@ -1598,7 +1562,6 @@
                 loadMonthlyObservations();
             });
             
-            // New: Filter event listeners
             document.getElementById('filterName').addEventListener('input', renderSchedule);
             document.getElementById('filterRole').addEventListener('input', renderSchedule);
             document.getElementById('filterWorkShift').addEventListener('input', renderSchedule);
