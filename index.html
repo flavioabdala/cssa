@@ -338,7 +338,7 @@
             <table id="scheduleTable" class="schedule-table">
                 <thead>
                     <tr id="scheduleHeader">
-                        <th class="w-1/6">Nome</th>
+                        <th class="w-1/6" id="headerName">Nome</th>
                         <th class="w-1/12">Função</th>
                         <th class="w-1/12">Conselho</th>
                         <th class="w-1/12">Horário de Trabalho</th>
@@ -501,6 +501,7 @@
         
         const specialSiglas = ['FO', 'LM'];
         const dayOfWeekLetters = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+        let sortDirection = 'asc'; // 'asc' or 'desc'
 
         // --- Utility Functions ---
         window.showMessageBox = function(message, duration = 3000) {
@@ -720,7 +721,7 @@
                 return;
             }
 
-            const sortedEmployees = sortEmployees(employees);
+            const sortedEmployees = [...employees].sort((a,b) => a.name.localeCompare(b.name));
             sortedEmployees.forEach(emp => {
                 const li = document.createElement('li');
                 const teamColorClass = getTeamColorClass(emp.team);
@@ -739,18 +740,24 @@
                 employeesUl.appendChild(li);
             });
         }
-
+        
         function renderSchedule() {
             renderCurrentMonthYear();
             const scheduleHeader = document.getElementById('scheduleHeader');
             const scheduleBody = document.getElementById('scheduleBody');
             scheduleHeader.innerHTML = `
-                <th class="w-1/6">Nome</th>
+                <th class="w-1/6" id="headerName">Nome</th>
                 <th class="w-1/12">Função</th>
                 <th class="w-1/12">Conselho</th>
                 <th class="w-1/12">Horário de Trabalho</th>
             `;
             scheduleBody.innerHTML = '';
+            
+            const headerName = document.getElementById('headerName');
+            headerName.addEventListener('click', () => {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                renderSchedule();
+            });
 
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
@@ -772,7 +779,13 @@
             }
             
             const filteredEmployees = filterEmployees();
-            const sortedEmployees = sortEmployees(filteredEmployees);
+            const sortedEmployees = [...filteredEmployees].sort((a,b) => {
+                if (sortDirection === 'asc') {
+                    return a.name.localeCompare(b.name);
+                } else {
+                    return b.name.localeCompare(a.name);
+                }
+            });
 
             // Add employee rows
             sortedEmployees.forEach(emp => {
@@ -791,8 +804,7 @@
                     const td = document.createElement('td');
                     td.setAttribute('data-employee-id', emp.id);
                     td.setAttribute('data-date-key', dateKey);
-                    td.onclick = function() { window.openSiglaVacationModal(emp.id, dateKey); };
-
+                    
                     // Handle Vacations (with cell merge)
                     if (isVacation(emp, currentYear, currentMonth, i)) {
                         td.classList.add('vacation');
@@ -825,6 +837,12 @@
                         if (isWeekend(emp, currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i)) {
                             td.classList.add('weekend');
                         }
+                        
+                        // New: Click handler for single day editing
+                        td.addEventListener('click', (event) => {
+                            editDaySchedule(event.target, emp.id, dateKey);
+                        });
+
                         tr.appendChild(td);
                     }
                 }
@@ -832,6 +850,60 @@
             });
             loadMonthlyObservations();
         }
+
+        // New: Function to edit a single day's schedule
+        function editDaySchedule(cell, employeeId, dateKey) {
+            const employee = employees.find(e => e.id === employeeId);
+            if (!employee) return;
+
+            // Check if the day is not a weekend, holiday, vacation, or leave
+            const dateParts = dateKey.split('-').map(Number);
+            const day = dateParts[2];
+            if (!isWorkday(employee, currentYear, currentMonth, day) || isVacation(employee, currentYear, currentMonth, day) || isLeave(employee, currentYear, currentMonth, day, 'LM') || isLeave(employee, currentYear, currentMonth, day, 'FO')) {
+                 return; // Do not edit special days
+            }
+            
+            const currentSiglas = cell.textContent;
+
+            // Create an input field
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'w-full text-center border rounded';
+            input.value = currentSiglas;
+            input.style.fontSize = '0.75rem';
+            
+            // Replace the cell content with the input field
+            cell.textContent = '';
+            cell.appendChild(input);
+            input.focus();
+
+            // Save function
+            const saveSchedule = () => {
+                const newSiglas = input.value.trim().split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
+                
+                if (!employee.schedule) {
+                    employee.schedule = {};
+                }
+                
+                if (newSiglas.length > 0) {
+                    employee.schedule[dateKey] = newSiglas;
+                } else {
+                    delete employee.schedule[dateKey];
+                }
+
+                saveEmployees();
+                renderSchedule();
+            };
+
+            // Event listener for saving
+            input.addEventListener('blur', saveSchedule);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveSchedule();
+                }
+            });
+        }
+
 
         function renderSiglaCheckboxes(containerId) {
             const container = document.getElementById(containerId);
@@ -993,6 +1065,7 @@
             }
         }
         
+        // CORREÇÃO: Aplica LM e FO com a data certa
         function applyLeaveOrVacation(type) {
             const startDate = document.getElementById('dateRangeStart').value;
             const endDate = document.getElementById('dateRangeEnd').value;
@@ -1001,30 +1074,34 @@
                 window.showMessageBox(`Por favor, selecione as datas de início e fim.`, 4000);
                 return;
             }
-            
+
             const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
             if (employeeIndex === -1) return;
             const employee = employees[employeeIndex];
             
-            // Clear any existing schedule entries within the period
+            // Adiciona a licença/folga, sobrescrevendo outras entradas
+            const newEntry = { start: startDate, end: endDate, type: type.toUpperCase() };
+            
+            if (type === 'vacation') {
+                if (!employee.vacations) employee.vacations = [];
+                employee.vacations.push(newEntry);
+                window.showMessageBox('Férias aplicadas com sucesso!');
+            } else {
+                if (!employee.leaves) employee.leaves = [];
+                employee.leaves.push(newEntry);
+                window.showMessageBox(`${type === 'folga' ? 'Folga' : 'Licença Médica'} aplicada com sucesso!`);
+            }
+            
+            // Limpa a escala de sigla dentro do período selecionado
             let tempDate = new Date(startDate);
             const end = new Date(endDate);
-            while (tempDate <= end) {
+            end.setDate(end.getDate() + 1); // Garante que o último dia seja incluído
+            while (tempDate < end) {
                 const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
                 if (employee.schedule && employee.schedule[dateKey]) {
                     delete employee.schedule[dateKey];
                 }
                 tempDate.setDate(tempDate.getDate() + 1);
-            }
-            
-            if (type === 'vacation') {
-                if (!employee.vacations) employee.vacations = [];
-                employee.vacations.push({ start: startDate, end: endDate });
-                window.showMessageBox('Férias aplicadas com sucesso!');
-            } else {
-                if (!employee.leaves) employee.leaves = [];
-                employee.leaves.push({ start: startDate, end: endDate, type: type.toUpperCase() });
-                window.showMessageBox(`${type === 'folga' ? 'Folga' : 'Licença Médica'} aplicada com sucesso!`);
             }
             
             saveEmployees();
