@@ -933,10 +933,10 @@
             currentEditingEmployeeId = null;
         }
 
-        // CORREÇÃO: Função para aplicar siglas do mês, corrigindo o erro de 'undefined'
+        // CORREÇÃO: Função para aplicar siglas do mês, corrigindo o erro de 'undefined' e a lógica
         function applySiglaMonth() {
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
-
+            
             if (selectedSiglas.length === 0) {
                 window.showMessageBox('Por favor, selecione ao menos uma sigla.', 3000);
                 return;
@@ -944,22 +944,24 @@
 
             const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
             if (employeeIndex === -1) return;
-
             const employee = employees[employeeIndex];
-            const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
             // Garante que employee.schedule seja um objeto antes de usá-lo
             if (!employee.schedule) {
                 employee.schedule = {};
             }
+            
+            const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+
+                // Só aplica as siglas se o dia não for final de semana, feriado, férias ou licença/folga
                 if (!isWeekend(employee, currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i) && !isLeave(employee, currentYear, currentMonth, i, 'FO') && !isLeave(employee, currentYear, currentMonth, i, 'LM')) {
                     employee.schedule[dateKey] = selectedSiglas;
                 } else {
-                    // Clear existing siglas on weekends, holidays, or special leaves
-                    if (employee.schedule && employee.schedule[dateKey]) {
+                    // Limpa a sigla para o dia se ele não for um dia útil
+                    if (employee.schedule[dateKey]) {
                         delete employee.schedule[dateKey];
                     }
                 }
@@ -1185,7 +1187,7 @@
             }
         }
         
-        // --- Copy Schedule Functionality ---
+        // CORREÇÃO: Função para copiar a escala para o próximo mês, evitando a desconfiguração de quem está de férias
         function copyScheduleToNextMonth() {
             if (employees.length === 0) {
                 window.showMessageBox('Não há funcionários para copiar a escala.', 3000);
@@ -1199,6 +1201,7 @@
                     nextYear++;
                 }
 
+                const employeesToWarn = [];
                 employees.forEach(emp => {
                     const daysInNextMonth = getDaysInMonth(nextYear, nextMonth);
                     
@@ -1206,22 +1209,30 @@
                         emp.schedule = {};
                     }
 
-                    // Store the current month's workday schedules indexed by day of the week
+                    // A nova lógica irá copiar a escala se houver pelo menos um dia útil preenchido no mês atual
                     const currentMonthWorkdays = {};
+                    let hasWorkdaySchedule = false;
                     for (let j = 1; j <= getDaysInMonth(currentYear, currentMonth); j++) {
-                        const date = new Date(currentYear, currentMonth, j);
-                        const dayOfWeek = date.getDay(); // 0-6
-                        if (isWorkday(emp, currentYear, currentMonth, j) && emp.schedule && emp.schedule[`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`]) {
+                        const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
+                        if (emp.schedule && emp.schedule[dateKey] && !isVacation(emp, currentYear, currentMonth, j) && !isLeave(emp, currentYear, currentMonth, j, 'LM') && !isLeave(emp, currentYear, currentMonth, j, 'FO')) {
+                            const dayOfWeek = new Date(currentYear, currentMonth, j).getDay();
                             if (!currentMonthWorkdays[dayOfWeek]) {
-                                currentMonthWorkdays[dayOfWeek] = emp.schedule[`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`];
+                                currentMonthWorkdays[dayOfWeek] = emp.schedule[dateKey];
                             }
+                            hasWorkdaySchedule = true;
                         }
                     }
 
+                    // Se não houver escala preenchida para dias úteis (ex: funcionário de férias), pula a cópia e adiciona um aviso
+                    if (!hasWorkdaySchedule) {
+                        employeesToWarn.push(emp.name);
+                        return; // Pula este funcionário
+                    }
+                    
+                    // Copia a escala para o próximo mês
                     for (let i = 1; i <= daysInNextMonth; i++) {
                         const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                         
-                        // Only update if it's a workday and no existing entry exists for the day
                         if (isWorkday(emp, nextYear, nextMonth, i) && !emp.schedule[nextMonthDateKey]) {
                             const dayOfWeek = new Date(nextYear, nextMonth, i).getDay();
                             const copiedSigla = currentMonthWorkdays[dayOfWeek];
@@ -1230,16 +1241,20 @@
                             } else {
                                 delete emp.schedule[nextMonthDateKey];
                             }
-                        } else if (!isWorkday(emp, nextYear, nextMonth, i)) {
-                             // Se não é dia útil (fins de semana ou feriados), garante que não há sigla
+                        } else if (!isWorkday(emp, nextYear, nextMonth, i) && emp.schedule && emp.schedule[nextMonthDateKey]) {
+                             // Se não é dia útil, garante que não há sigla, mas não altera férias/licença já existentes
                             delete emp.schedule[nextMonthDateKey];
                         }
                     }
                 });
                 
                 saveEmployees();
-                window.showMessageBox('Escala copiada com sucesso para o próximo mês!');
-                // Move to next month view to show the copied schedule
+                let message = 'Escala copiada com sucesso para o próximo mês!';
+                if (employeesToWarn.length > 0) {
+                    message += `\n\nAtenção: A escala de ${employeesToWarn.join(', ')} não foi copiada porque não havia dados de trabalho no mês anterior. Por favor, preencha manualmente.`;
+                }
+                window.showMessageBox(message, 7000);
+
                 currentMonth = nextMonth;
                 currentYear = nextYear;
                 renderSchedule();
