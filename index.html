@@ -518,12 +518,11 @@
             document.getElementById('messageBox').classList.add('hidden');
         }
 
+        // --- FUNÇÃO getDocRef CORRIGIDA ---
         function getDocRef(collectionName) {
-            // Caminho corrigido para usar a estrutura exata que você forneceu.
-            // Todos os documentos (custom_holidays, custom_siglas, etc.)
-            // agora são filhos de uma coleção que chamamos de 'app_data'.
-            // Altere 'app_data' se o nome da coleção for diferente.
-            return doc(db, 'artifacts', appId, 'users', userId, 'app_data', collectionName);
+            // Este é o caminho correto para as suas coleções:
+            // .../users/{userId}/{collectionName}
+            return doc(db, 'artifacts', appId, 'users', userId, collectionName, 'data');
         }
         
         async function saveData(collectionName, data) {
