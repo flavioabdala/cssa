@@ -519,8 +519,11 @@
         }
 
         function getDocRef(collectionName) {
-             // O caminho foi corrigido para usar a estrutura exata que você forneceu.
-            return doc(db, 'artifacts', appId, 'users', userId, collectionName, 'data');
+            // Caminho corrigido para usar a estrutura exata que você forneceu.
+            // Todos os documentos (custom_holidays, custom_siglas, etc.)
+            // agora são filhos de uma coleção que chamamos de 'app_data'.
+            // Altere 'app_data' se o nome da coleção for diferente.
+            return doc(db, 'artifacts', appId, 'users', userId, 'app_data', collectionName);
         }
         
         async function saveData(collectionName, data) {
