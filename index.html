@@ -520,9 +520,8 @@
 
         // --- FUNÇÃO getDocRef CORRIGIDA ---
         function getDocRef(collectionName) {
-            // Este é o caminho correto para as suas coleções:
-            // .../users/{userId}/{collectionName}
-            return doc(db, 'artifacts', appId, 'users', userId, collectionName, 'data');
+            // Este é o novo caminho, com o sub-caminho `health_schedule_data`
+            return doc(db, 'artifacts', appId, 'users', userId, 'health_schedule_data', collectionName, 'data');
         }
         
         async function saveData(collectionName, data) {
@@ -572,9 +571,9 @@
             document.getElementById('monthlyObservations').value = monthlyObservations[key] || '';
         }
         
-        function saveSiglas() { saveData('custom_siglas', customSiglas); }
+        function saveSiglas() { saveData('customSiglas', customSiglas); }
         async function loadSiglas() {
-            const loadedSiglas = await loadData('custom_siglas', []);
+            const loadedSiglas = await loadData('customSiglas', []);
             if (loadedSiglas.length > 0) {
                 customSiglas = loadedSiglas;
             }
