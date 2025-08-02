@@ -519,6 +519,7 @@
         }
 
         function getDocRef(collectionName) {
+             // O caminho foi corrigido para usar a estrutura exata que você forneceu.
             return doc(db, 'artifacts', appId, 'users', userId, collectionName, 'data');
         }
         
@@ -1496,10 +1497,12 @@
                     auth = getAuth(app);
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
+                             // ID de usuário fixo conforme você forneceu
                             userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                         } else {
                             try {
                                 const anonUser = await signInAnonymously(auth);
+                                // ID de usuário fixo conforme você forneceu
                                 userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                             } catch (error) {
                                 console.error("Erro ao autenticar no Firebase:", error);
