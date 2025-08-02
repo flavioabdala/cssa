@@ -517,11 +517,11 @@
         window.hideMessageBox = function() {
             document.getElementById('messageBox').classList.add('hidden');
         }
-
+        
         // --- FUNÇÃO getDocRef CORRIGIDA ---
         function getDocRef(collectionName) {
-            // Este é o novo caminho, com o sub-caminho `health_schedule_data`
-            return doc(db, 'artifacts', appId, 'users', userId, 'health_schedule_data', collectionName, 'data');
+            // Caminho corrigido: removemos o último segmento 'data'
+            return doc(db, 'artifacts', appId, 'users', userId, 'health_schedule_data', collectionName);
         }
         
         async function saveData(collectionName, data) {
