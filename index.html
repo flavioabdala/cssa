@@ -472,7 +472,7 @@
 
         let db;
         let auth;
-        let userId;
+        let userId; // Será definido após a autenticação
         let isAuthReady = false;
 
         // Firebase imports
@@ -486,10 +486,10 @@
         let employees = [];
         let currentEditingEmployeeId = null;
         let monthlyObservations = {};
-        let customHolidays = {}; // New: Custom holidays per month
+        let customHolidays = {}; // Feriados personalizados por mês
         let customSiglas = [
             { id: '1', abbr: 'F', name: 'Farmácia', color: '#fca5a5' }, // Red-300
-            { id: '2', abbr: 'S', name: 'Sala de Observação', color: '#fdba74' }, // Orange-300
+            { id: '2', abbr: 'S', name: 'Sala de Observação', color: '#fdba74' }, // Orange-300 (Antiga SOE)
             { id: '3', abbr: 'P', name: 'Presente', color: '#86efac' }, // Green-300
             { id: '4', abbr: 'CT', name: 'Curativo', color: '#bfdbfe' }, // Blue-300
             { id: '5', abbr: 'BR', name: 'Acolhimento Baixo Risco', color: '#a5b4fc' }, // Indigo-300
@@ -501,10 +501,10 @@
         
         const specialSiglas = ['FO', 'LM'];
         const dayOfWeekLetters = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-        let sortDirection = {}; // Store sort direction for each column
+        let sortDirection = {}; // Armazena a direção de ordenação para cada coluna
         let currentSortKey = 'name';
 
-        // --- Utility Functions ---
+        // --- Funções Utilitárias ---
         window.showMessageBox = function(message, duration = 3000) {
             const messageBox = document.getElementById('messageBox');
             document.getElementById('messageText').textContent = message;
@@ -520,7 +520,6 @@
         
         // --- FUNÇÃO getDocRef CORRIGIDA ---
         function getDocRef(collectionName) {
-            // Caminho corrigido: removemos o último segmento 'data'
             return doc(db, 'artifacts', appId, 'users', userId, 'health_schedule_data', collectionName);
         }
         
@@ -661,7 +660,7 @@
             return false;
         }
         
-        // --- Render Functions ---
+        // --- Funções de Renderização ---
         function renderCurrentMonthYear() {
             const date = new Date(currentYear, currentMonth);
             document.getElementById('currentMonthYear').textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
@@ -679,7 +678,7 @@
             }
         }
         
-        // New: General sorting function
+        // Nova: Função de ordenação geral
         function sortEmployees(empArray, key, direction) {
             return [...empArray].sort((a, b) => {
                 const valueA = a[key] || '';
@@ -693,7 +692,7 @@
             });
         }
         
-        // New: Filter function
+        // Nova: Função de filtro
         function filterEmployees() {
             const filterName = document.getElementById('filterName').value.toLowerCase();
             const filterRole = document.getElementById('filterRole').value.toLowerCase();
@@ -749,7 +748,7 @@
             `;
             scheduleBody.innerHTML = '';
             
-            // Add click event listeners to sortable headers
+            // Adiciona event listeners de clique aos cabeçalhos para ordenação
             document.querySelectorAll('.sortable').forEach(header => {
                 header.addEventListener('click', () => {
                     const sortKey = header.dataset.sortKey;
@@ -765,16 +764,16 @@
 
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
-            // Add day headers
+            // Adiciona cabeçalhos dos dias
             for (let i = 1; i <= daysInMonth; i++) {
                 const th = document.createElement('th');
                 const date = new Date(currentYear, currentMonth, i);
                 const dayOfWeek = date.getDay();
                 const dayLetter = dayOfWeekLetters[dayOfWeek];
-                th.innerHTML = `${i} <div class="font-normal text-gray-500">${dayLetter}</div>`;
+                th.innerHTML = `${i} <div class="font-normal text-gray-500 day-letter">${dayLetter}</div>`;
                 th.setAttribute('data-day', i);
                 th.onclick = function() { toggleCustomHoliday(i); };
-                const isDayWeekend = new Date(currentYear, currentMonth, i).getDay() === 0 || new Date(currentYear, currentMonth, i).getDay() === 6;
+                const isDayWeekend = isWeekend(null, currentYear, currentMonth, i); // Pass null for employee as weekend is general
                 if (isDayWeekend || isHoliday(currentYear, currentMonth, i)) {
                     th.classList.add('weekend');
                 }
@@ -784,7 +783,7 @@
             const filteredEmployees = filterEmployees();
             const sortedEmployees = sortEmployees(filteredEmployees, currentSortKey, sortDirection[currentSortKey] || 'asc');
 
-            // Add employee rows
+            // Adiciona linhas dos funcionários
             sortedEmployees.forEach(emp => {
                 const tr = document.createElement('tr');
                 const teamColorClass = getTeamColorClass(emp.team);
@@ -897,7 +896,7 @@
         function renderSiglaCheckboxes(containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            // Add custom siglas
+            // Adiciona siglas personalizadas
             customSiglas.forEach(sigla => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center';
@@ -906,7 +905,7 @@
             });
         }
 
-        // --- Employee Actions ---
+        // --- Ações de Funcionário ---
         function addEmployee() {
             const name = document.getElementById('employeeName').value.trim();
             let role = document.getElementById('employeeRole').value.trim();
@@ -935,7 +934,7 @@
                 saveEmployees();
                 renderEmployeeList();
                 renderSchedule();
-                // Clear form
+                // Limpa formulário
                 document.getElementById('employeeName').value = '';
                 document.getElementById('employeeRole').value = '';
                 document.getElementById('customEmployeeRole').value = '';
@@ -959,7 +958,7 @@
             }
         }
 
-        // --- Modal Functions ---
+        // --- Funções de Modal ---
         window.openSiglaVacationModal = function(employeeId) {
             currentEditingEmployeeId = employeeId;
             const employee = employees.find(emp => emp.id === employeeId);
@@ -1076,11 +1075,11 @@
             
             let tempDate = new Date(startDate);
             const end = new Date(endDate);
-            end.setDate(end.getDate() + 1);
+            end.setDate(end.getDate() + 1); // Incluir o dia final
             while (tempDate < end) {
                 const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
                 if (employee.schedule && employee.schedule[dateKey]) {
-                    delete employee.schedule[dateKey];
+                    delete employee.schedule[dateKey]; // Remove a sigla de trabalho para o período de licença/folga/férias
                 }
                 tempDate.setDate(tempDate.getDate() + 1);
             }
@@ -1153,7 +1152,7 @@
             }
         }
         
-        // --- Sigla Management Functions ---
+        // --- Funções de Gerenciamento de Sigla ---
         window.openManageSiglasModal = function() {
             document.getElementById('manageSiglasModal').classList.remove('hidden');
             renderSiglasList();
@@ -1161,7 +1160,7 @@
 
         window.closeManageSiglasModal = function() {
             document.getElementById('manageSiglasModal').classList.add('hidden');
-            // Clear input fields
+            // Limpa os campos de entrada
             document.getElementById('siglaAbbr').value = '';
             document.getElementById('siglaName').value = '';
             document.getElementById('siglaColor').value = '';
@@ -1173,11 +1172,15 @@
             const color = document.getElementById('siglaColor').value.trim();
             
             if (abbr && name && color) {
+                if (customSiglas.some(s => s.abbr === abbr)) {
+                    window.showMessageBox(`A sigla '${abbr}' já existe.`, 3000);
+                    return;
+                }
                 customSiglas.push({ id: crypto.randomUUID(), abbr, name, color });
                 saveSiglas();
                 renderSiglasList();
                 window.showMessageBox('Sigla adicionada com sucesso!');
-                // Clear input fields
+                // Limpa os campos de entrada
                 document.getElementById('siglaAbbr').value = '';
                 document.getElementById('siglaName').value = '';
                 document.getElementById('siglaColor').value = '';
@@ -1215,7 +1218,7 @@
             });
         }
 
-        // --- Dynamic Holiday Functionality ---
+        // --- Funcionalidade de Feriado Dinâmico ---
         function toggleCustomHoliday(day) {
             const key = `${currentYear}-${currentMonth + 1}`;
             const isDayCustomHoliday = customHolidays[key] && customHolidays[key].includes(day);
@@ -1248,7 +1251,7 @@
                 window.showMessageBox('Não há funcionários para copiar a escala.', 3000);
                 return;
             }
-            if (confirm('Tem certeza que deseja copiar a escala atual para o próximo mês? Isso não apagará as informações já existentes, apenas preencherá os dias úteis. Certifique-se de que não existem informações preenchidas para o próximo mês que você deseja manter.')) {
+            if (confirm('Tem certeza que deseja copiar a escala atual para o próximo mês? Isso copiará as siglas de dias úteis, mas não as folgas/licenças médicas específicas e preservará períodos de férias já agendados.')) {
                 let nextMonth = currentMonth + 1;
                 let nextYear = currentYear;
                 if (nextMonth > 11) {
@@ -1264,19 +1267,19 @@
                         emp.schedule = {};
                     }
 
-                    const currentMonthWorkdays = {};
+                    const currentMonthWorkdaysSchedule = {};
                     let hasWorkdaySchedule = false;
                     for (let j = 1; j <= getDaysInMonth(currentYear, currentMonth); j++) {
                         const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
+                        // Copia apenas a escala de dias úteis que não são férias, folgas ou licenças no mês atual
                         if (emp.schedule && emp.schedule[dateKey] && !isVacation(emp, currentYear, currentMonth, j) && !isLeave(emp, currentYear, currentMonth, j, 'LM') && !isLeave(emp, currentYear, currentMonth, j, 'FO')) {
                             const dayOfWeek = new Date(currentYear, currentMonth, j).getDay();
-                            if (!currentMonthWorkdays[dayOfWeek]) {
-                                currentMonthWorkdays[dayOfWeek] = emp.schedule[dateKey];
-                            }
+                            currentMonthWorkdaysSchedule[dayOfWeek] = emp.schedule[dateKey];
                             hasWorkdaySchedule = true;
                         }
                     }
 
+                    // Se não há escala de dias úteis para copiar, avisa
                     if (!hasWorkdaySchedule) {
                         employeesToWarn.push(emp.name);
                         return;
@@ -1285,16 +1288,24 @@
                     for (let i = 1; i <= daysInNextMonth; i++) {
                         const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                         
-                        if (isWorkday(emp, nextYear, nextMonth, i) && !emp.schedule[nextMonthDateKey]) {
+                        // Verifica se o dia no próximo mês já tem férias, folga ou licença
+                        const isDayOccupiedInNextMonth = isVacation(emp, nextYear, nextMonth, i) || isLeave(emp, nextYear, nextMonth, i, 'LM') || isLeave(emp, nextYear, nextMonth, i, 'FO');
+
+                        if (!isDayOccupiedInNextMonth && isWorkday(emp, nextYear, nextMonth, i)) {
                             const dayOfWeek = new Date(nextYear, nextMonth, i).getDay();
-                            const copiedSigla = currentMonthWorkdays[dayOfWeek];
+                            const copiedSigla = currentMonthWorkdaysSchedule[dayOfWeek];
                             if (copiedSigla) {
                                 emp.schedule[nextMonthDateKey] = copiedSigla;
                             } else {
                                 delete emp.schedule[nextMonthDateKey];
                             }
-                        } else if (!isWorkday(emp, nextYear, nextMonth, i) && emp.schedule && emp.schedule[nextMonthDateKey]) {
+                        } else if (isDayOccupiedInNextMonth) {
+                            // Se o dia está ocupado (férias/folga/licença), remove qualquer sigla de trabalho que possa ter sido copiada acidentalmente
                             delete emp.schedule[nextMonthDateKey];
+                        }
+                        // Se não é dia de trabalho e não está ocupado, o schedule para esse dia deve ser vazio
+                        else if (!isWorkday(emp, nextYear, nextMonth, i)) {
+                             delete emp.schedule[nextMonthDateKey];
                         }
                     }
                 });
@@ -1313,7 +1324,7 @@
             }
         }
         
-        // --- Print Functionality ---
+        // --- Funcionalidade de Impressão ---
         function printSchedule() {
             const filteredEmployees = filterEmployees();
             
