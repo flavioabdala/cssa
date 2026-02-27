@@ -11,7 +11,8 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; /* Light blue-gray background */
-            color: #334155; /* Darker text */
+            color: #334155;
+            /* Darker text */
         }
         .container {
             max-width: 1200px;
@@ -22,7 +23,8 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .header {
-            background-color: #4a90e2; /* Blue header */
+            background-color: #4a90e2;
+            /* Blue header */
             color: white;
             padding: 1.5rem;
             border-radius: 0.75rem;
@@ -41,7 +43,8 @@
             background-color: #357ABD;
         }
         .btn-secondary {
-            background-color: #64748b; /* Gray */
+            background-color: #64748b;
+            /* Gray */
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -51,7 +54,8 @@
             background-color: #475569;
         }
         .btn-danger {
-            background-color: #ef4444; /* Red */
+            background-color: #ef4444;
+            /* Red */
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -61,7 +65,8 @@
             background-color: #dc2626;
         }
         .input-field {
-            border: 1px solid #cbd5e1; /* Light gray border */
+            border: 1px solid #cbd5e1;
+            /* Light gray border */
             padding: 0.75rem;
             border-radius: 0.5rem;
             width: 100%;
@@ -89,13 +94,18 @@
             position: relative;
         }
         #manageSiglasModal .modal-content {
-            max-height: 90vh; /* Set max height for the modal */
-            display: flex; /* Flex container for content */
-            flex-direction: column; /* Stack content vertically */
+            max-height: 90vh;
+            /* Set max height for the modal */
+            display: flex;
+            /* Flex container for content */
+            flex-direction: column;
+            /* Stack content vertically */
         }
         #siglasList {
-            overflow-y: auto; /* Add vertical scrollbar */
-            flex-grow: 1; /* Allow list to take up remaining space */
+            overflow-y: auto;
+            /* Add vertical scrollbar */
+            flex-grow: 1;
+            /* Allow list to take up remaining space */
             margin-top: 1rem;
         }
         .close-button {
@@ -120,49 +130,63 @@
             min-width: 800px; /* Ensure table doesn't get too small on narrow screens */
         }
         .schedule-table th, .schedule-table td {
-            border: 1px solid #e2e8f0; /* Light gray table borders */
-            padding: 0.25rem; /* Smaller padding */
+            border: 1px solid #e2e8f0;
+            /* Light gray table borders */
+            padding: 0.25rem;
+            /* Smaller padding */
             text-align: center;
-            white-space: nowrap; /* Prevent text wrapping in cells */
-            font-size: 0.75rem; /* text-xs */
+            white-space: nowrap;
+            /* Prevent text wrapping in cells */
+            font-size: 0.75rem;
+            /* text-xs */
         }
         .schedule-table th {
-            background-color: #e2e8f0; /* Light gray header */
+            background-color: #e2e8f0;
+            /* Light gray header */
             font-weight: 600;
-            cursor: pointer; /* To show that the day column is clickable */
+            cursor: pointer;
+            /* To show that the day column is clickable */
         }
         .schedule-table thead th div {
-            font-size: 0.6rem; /* Extra small for day letter */
+            font-size: 0.6rem;
+            /* Extra small for day letter */
         }
         .schedule-table tbody tr:hover {
-            background-color: #f8fafc; /* Lighter on hover */
+            background-color: #f8fafc;
+            /* Lighter on hover */
         }
         .weekend, .holiday {
-            background-color: #cbd5e1; /* Darker gray for weekends/holidays */
+            background-color: #cbd5e1;
+            /* Darker gray for weekends/holidays */
             color: #475569;
         }
         .vacation {
-            background-color: #93c5fd; /* Light blue for vacations */
+            background-color: #93c5fd;
+            /* Light blue for vacations */
             color: #1e40af;
             font-weight: 600;
         }
         /* New colors for LM/FO */
         .licenca {
-            background-color: #fcd34d; /* Yellow */
+            background-color: #fcd34d;
+            /* Yellow */
             color: #78350f;
             font-weight: 600;
         }
         .folga {
-            background-color: #6b7280; /* Dark gray */
+            background-color: #6b7280;
+            /* Dark gray */
             color: #ffffff;
             font-weight: 600;
         }
 
         /* Employee List Container */
         #employeeListContainer {
-            max-height: 300px; /* Adjust as needed */
+            max-height: 300px;
+            /* Adjust as needed */
             overflow-y: auto;
-            padding-right: 1rem; /* Add some padding to prevent scrollbar from hiding content */
+            padding-right: 1rem;
+            /* Add some padding to prevent scrollbar from hiding content */
         }
 
         .printable-table {
@@ -208,12 +232,15 @@
         @media print {
             /* Corrigindo a impressão para caber em uma única página */
             @page {
-                size: A4 landscape; /* Definindo a orientação da página */
-                margin: 0.5cm; /* Margem ainda menor */
+                size: A4 landscape;
+                /* Definindo a orientação da página */
+                margin: 0.5cm;
+                /* Margem ainda menor */
             }
 
             body {
-                font-size: 8px; /* Font size maior para o print */
+                font-size: 8px;
+                /* Font size maior para o print */
                 margin: 0;
                 padding: 0;
             }
@@ -249,12 +276,15 @@
                 table-layout: fixed; /* Fixa o layout da tabela */
             }
             .printable-table th, .printable-table td {
-                font-size: 9px; /* Font size ajustada */
-                padding: 1px; /* Padding menor */
+                font-size: 9px;
+                /* Font size ajustada */
+                padding: 1px;
+                /* Padding menor */
                 text-align: center;
                 white-space: normal;
                 word-break: break-word; /* Quebra palavras longas */
-                height: 12px; /* Reduzindo a altura da linha */
+                height: 12px;
+                /* Reduzindo a altura da linha */
             }
             /* AJUSTE: Largura das colunas para impressão (mais finas) */
             .printable-table th:nth-child(1) { width: 18%; }
@@ -474,13 +504,10 @@
         let auth;
         let userId; // Será definido após a autenticação
         let isAuthReady = false;
-
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let employees = [];
@@ -498,7 +525,6 @@
             { id: '8', abbr: 'T', name: 'Totem', color: '#a0aec0' }, // Gray-500
             { id: '9', abbr: 'C', name: 'Consultórios', color: '#a0e4a7' }, // Custom light green
         ];
-        
         const specialSiglas = ['FO', 'LM'];
         const dayOfWeekLetters = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
         let sortDirection = {}; // Armazena a direção de ordenação para cada coluna
@@ -609,7 +635,6 @@
             '2025-05-01', '2025-06-19', '2025-09-07', '2025-10-12', '2025-11-02', 
             '2025-11-15', '2025-12-25'
         ];
-
         function isHoliday(year, month, day) {
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isNational = nationalHolidays.includes(dateString);
@@ -634,7 +659,6 @@
                 startDate.setHours(0,0,0,0);
                 endDate.setHours(0,0,0,0);
                 currentDate.setHours(0,0,0,0);
-                
                 if (currentDate >= startDate && currentDate <= endDate) return true;
             }
             return false;
@@ -653,7 +677,6 @@
                     startDate.setHours(0,0,0,0);
                     endDate.setHours(0,0,0,0);
                     currentDate.setHours(0,0,0,0);
-                    
                     if (currentDate >= startDate && currentDate <= endDate) return true;
                 }
             }
@@ -698,7 +721,6 @@
             const filterRole = document.getElementById('filterRole').value.toLowerCase();
             const filterWorkShift = document.getElementById('filterWorkShift').value.toLowerCase();
             const filterTeam = document.getElementById('filterTeam').value.toLowerCase();
-
             return employees.filter(emp => {
                 const nameMatch = emp.name.toLowerCase().includes(filterName);
                 const roleMatch = emp.role.toLowerCase().includes(filterRole);
@@ -761,7 +783,6 @@
                     renderSchedule();
                 });
             });
-
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
             // Adiciona cabeçalhos dos dias
@@ -793,7 +814,7 @@
                     </td>
                     <td>${emp.role}</td>
                     <td>${emp.council}</td>
-                    <td>${emp.workShift || ''}</td>
+                    <td class="cursor-pointer hover:bg-gray-200 transition-colors" onclick="window.editWorkShift(this, '${emp.id}')" title="Clique para editar">${emp.workShift || ''}</td>
                 `;
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -856,20 +877,17 @@
             }
             
             const currentSiglas = cell.textContent;
-
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'w-full text-center border rounded';
             input.value = currentSiglas;
             input.style.fontSize = '0.75rem';
-            
             cell.textContent = '';
             cell.appendChild(input);
             input.focus();
 
             const saveSchedule = () => {
                 const newSiglas = input.value.trim().split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '');
-                
                 if (!employee.schedule) {
                     employee.schedule = {};
                 }
@@ -883,7 +901,6 @@
                 saveEmployees();
                 renderSchedule();
             };
-
             input.addEventListener('blur', saveSchedule);
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -891,6 +908,47 @@
                 }
             });
         }
+
+        window.editWorkShift = function(cell, employeeId) {
+            // Evita criar múltiplos inputs se o usuário clicar várias vezes
+            if (cell.querySelector('input')) return;
+
+            const employee = employees.find(e => e.id === employeeId);
+            if (!employee) return;
+
+            const currentShift = employee.workShift || '';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'w-full text-center border border-blue-400 rounded outline-none py-1';
+            input.value = currentShift;
+            input.style.fontSize = '0.75rem';
+
+            // Limpa a célula e insere o input
+            cell.textContent = '';
+            cell.appendChild(input);
+            input.focus();
+
+            // Função para salvar a alteração
+            const saveShift = () => {
+                const newShift = input.value.trim();
+                
+                // Só salva se houver alteração para evitar re-renderizações desnecessárias
+                if (newShift !== currentShift) {
+                    employee.workShift = newShift;
+                    saveEmployees();
+                    renderEmployeeList(); // Atualiza a lista lá embaixo também
+                }
+                renderSchedule(); // Atualiza a tabela voltando o texto normal
+            };
+
+            // Salva ao clicar fora (blur) ou apertar Enter
+            input.addEventListener('blur', saveShift);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveShift();
+                }
+            });
+        };
 
 
         function renderSiglaCheckboxes(containerId) {
@@ -913,7 +971,6 @@
             const council = document.getElementById('employeeCouncil').value.trim();
             const workShift = document.getElementById('employeeWorkShift').value.trim();
             const team = document.getElementById('employeeTeam').value.trim();
-
             if (role === 'Outro') {
                 role = customRole;
             }
@@ -994,7 +1051,6 @@
 
         function applySiglaMonth() {
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
-            
             if (selectedSiglas.length === 0) {
                 window.showMessageBox('Por favor, selecione ao menos uma sigla.', 3000);
                 return;
@@ -1009,10 +1065,8 @@
             }
             
             const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-
                 if (!isWeekend(employee, currentYear, currentMonth, i) && !isHoliday(currentYear, currentMonth, i) && !isVacation(employee, currentYear, currentMonth, i) && !isLeave(employee, currentYear, currentMonth, i, 'FO') && !isLeave(employee, currentYear, currentMonth, i, 'LM')) {
                     employee.schedule[dateKey] = selectedSiglas;
                 } else {
@@ -1034,7 +1088,6 @@
 
                 const employee = employees[employeeIndex];
                 const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                     if (employee.schedule && employee.schedule[dateKey]) {
@@ -1062,7 +1115,6 @@
             const employee = employees[employeeIndex];
             
             const newEntry = { start: startDate, end: endDate, type: type.toUpperCase() };
-            
             if (type === 'vacation') {
                 if (!employee.vacations) employee.vacations = [];
                 employee.vacations.push(newEntry);
@@ -1079,7 +1131,8 @@
             while (tempDate < end) {
                 const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
                 if (employee.schedule && employee.schedule[dateKey]) {
-                    delete employee.schedule[dateKey]; // Remove a sigla de trabalho para o período de licença/folga/férias
+                    delete employee.schedule[dateKey];
+                    // Remove a sigla de trabalho para o período de licença/folga/férias
                 }
                 tempDate.setDate(tempDate.getDate() + 1);
             }
@@ -1104,7 +1157,6 @@
                     
                     return vacationEnd < currentMonthStart || vacationStart > currentMonthEnd;
                 });
-                
                 saveEmployees();
                 renderSchedule();
                 window.showMessageBox('Férias do funcionário no mês atual limpas.');
@@ -1127,7 +1179,6 @@
                     
                     return leaveEnd < currentMonthStart || leaveStart > currentMonthEnd;
                 });
-
                 saveEmployees();
                 renderSchedule();
                 window.showMessageBox('Licenças e folgas do funcionário no mês atual limpas.');
@@ -1287,10 +1338,8 @@
                     
                     for (let i = 1; i <= daysInNextMonth; i++) {
                         const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                        
                         // Verifica se o dia no próximo mês já tem férias, folga ou licença
                         const isDayOccupiedInNextMonth = isVacation(emp, nextYear, nextMonth, i) || isLeave(emp, nextYear, nextMonth, i, 'LM') || isLeave(emp, nextYear, nextMonth, i, 'FO');
-
                         if (!isDayOccupiedInNextMonth && isWorkday(emp, nextYear, nextMonth, i)) {
                             const dayOfWeek = new Date(nextYear, nextMonth, i).getDay();
                             const copiedSigla = currentMonthWorkdaysSchedule[dayOfWeek];
@@ -1305,18 +1354,16 @@
                         }
                         // Se não é dia de trabalho e não está ocupado, o schedule para esse dia deve ser vazio
                         else if (!isWorkday(emp, nextYear, nextMonth, i)) {
-                             delete emp.schedule[nextMonthDateKey];
+                            delete emp.schedule[nextMonthDateKey];
                         }
                     }
                 });
-                
                 saveEmployees();
                 let message = 'Escala copiada com sucesso para o próximo mês!';
                 if (employeesToWarn.length > 0) {
                     message += `\n\nAtenção: A escala de ${employeesToWarn.join(', ')} não foi copiada porque não havia dados de trabalho no mês anterior. Por favor, preencha manualmente.`;
                 }
                 window.showMessageBox(message, 7000);
-
                 currentMonth = nextMonth;
                 currentYear = nextYear;
                 renderSchedule();
@@ -1327,7 +1374,6 @@
         // --- Funcionalidade de Impressão ---
         function printSchedule() {
             const filteredEmployees = filterEmployees();
-            
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
                 <!DOCTYPE html>
@@ -1444,7 +1490,6 @@
                                             const isDayHoliday = isHoliday(currentYear, currentMonth, i);
                                             let cellContent = '';
                                             let cellClasses = '';
-
                                             if (isVacation(emp, currentYear, currentMonth, i)) {
                                                 cellContent = 'FÉRIAS';
                                                 cellClasses = 'vacation';
@@ -1509,7 +1554,7 @@
                     auth = getAuth(app);
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
-                             // ID de usuário fixo conforme você forneceu
+                            // ID de usuário fixo conforme você forneceu
                             userId = "A8ZDJrhRgMTbYSaLG7nL0fKnJK83";
                         } else {
                             try {
@@ -1556,7 +1601,6 @@
                     customRoleField.value = '';
                 }
             });
-
             document.getElementById('addEmployeeBtn').addEventListener('click', addEmployee);
             document.getElementById('prevMonth').addEventListener('click', () => {
                 currentMonth--;
@@ -1576,7 +1620,6 @@
                 renderSchedule();
                 loadMonthlyObservations();
             });
-            
             document.getElementById('filterName').addEventListener('input', renderSchedule);
             document.getElementById('filterRole').addEventListener('input', renderSchedule);
             document.getElementById('filterWorkShift').addEventListener('input', renderSchedule);
@@ -1595,7 +1638,6 @@
             document.getElementById('saveScheduleBtn').addEventListener('click', saveAllData);
             document.getElementById('manageSiglasBtn').addEventListener('click', openManageSiglasModal);
             document.getElementById('monthlyObservations').addEventListener('input', saveMonthlyObservations);
-            
             document.getElementById('addSiglaBtn').addEventListener('click', addSigla);
 
             renderCurrentMonthYear();
