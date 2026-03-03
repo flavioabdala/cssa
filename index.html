@@ -64,6 +64,13 @@
         .btn-danger:hover {
             background-color: #dc2626;
         }
+        .btn-disabled {
+            background-color: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+        }
         .input-field {
             border: 1px solid #cbd5e1;
             /* Light gray border */
@@ -508,6 +515,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let employees = [];
@@ -542,6 +550,17 @@
 
         window.hideMessageBox = function() {
             document.getElementById('messageBox').classList.add('hidden');
+        }
+
+        // Função para verificar se a tela atual está exibindo um mês do passado
+        function isPastMonthView() {
+            const now = new Date();
+            const currentRealYear = now.getFullYear();
+            const currentRealMonth = now.getMonth();
+            
+            if (currentYear < currentRealYear) return true;
+            if (currentYear === currentRealYear && currentMonth < currentRealMonth) return true;
+            return false;
         }
         
         // --- FUNÇÃO getDocRef CORRIGIDA ---
@@ -738,20 +757,22 @@
                 return;
             }
 
+            const isPast = isPastMonthView();
             const sortedEmployees = [...employees].sort((a,b) => a.name.localeCompare(b.name));
+            
             sortedEmployees.forEach(emp => {
                 const li = document.createElement('li');
                 const teamColorClass = getTeamColorClass(emp.team);
                 li.className = 'flex justify-between items-center bg-white p-3 rounded-md shadow-sm border border-gray-200';
                 li.innerHTML = `
                     <div class="flex-grow">
-                        <span class="font-medium text-blue-600 cursor-pointer" onclick="window.openSiglaVacationModal('${emp.id}')">${emp.name}</span>
+                        <span class="font-medium text-blue-600 ${isPast ? '' : 'cursor-pointer'}" onclick="${isPast ? "window.showMessageBox('Navegue até o mês atual para editar dados.', 3000)" : `window.openSiglaVacationModal('${emp.id}')`}">${emp.name}</span>
                         <span class="text-sm text-gray-500 ml-2">(${emp.role} - ${emp.council} - ${emp.workShift})</span>
                         <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${teamColorClass} ml-2">${emp.team}</span>
                         <span class="text-xs text-gray-400 block break-all">ID: ${emp.id}</span>
                     </div>
                     <div>
-                        <button onclick="window.deleteEmployee('${emp.id}')" class="btn-danger ml-2">Excluir</button>
+                        ${isPast ? '' : `<button onclick="window.deleteEmployee('${emp.id}')" class="btn-danger ml-2">Excluir</button>`}
                     </div>
                 `;
                 employeesUl.appendChild(li);
@@ -760,6 +781,17 @@
         
         function renderSchedule() {
             renderCurrentMonthYear();
+            
+            const isPast = isPastMonthView();
+            // Trava as observações se for mês passado
+            const obsField = document.getElementById('monthlyObservations');
+            obsField.readOnly = isPast;
+            if (isPast) {
+                obsField.classList.add('bg-gray-200', 'cursor-not-allowed');
+            } else {
+                obsField.classList.remove('bg-gray-200', 'cursor-not-allowed');
+            }
+
             const scheduleHeader = document.getElementById('scheduleHeader');
             const scheduleBody = document.getElementById('scheduleBody');
             scheduleHeader.innerHTML = `
@@ -793,7 +825,13 @@
                 const dayLetter = dayOfWeekLetters[dayOfWeek];
                 th.innerHTML = `${i} <div class="font-normal text-gray-500 day-letter">${dayLetter}</div>`;
                 th.setAttribute('data-day', i);
-                th.onclick = function() { toggleCustomHoliday(i); };
+                th.onclick = function() { 
+                    if (isPast) {
+                        window.showMessageBox('Não é permitido alterar feriados de meses anteriores.', 3000);
+                        return;
+                    }
+                    toggleCustomHoliday(i); 
+                };
                 const isDayWeekend = isWeekend(null, currentYear, currentMonth, i); // Pass null for employee as weekend is general
                 if (isDayWeekend || isHoliday(currentYear, currentMonth, i)) {
                     th.classList.add('weekend');
@@ -809,12 +847,16 @@
                 const tr = document.createElement('tr');
                 const teamColorClass = getTeamColorClass(emp.team);
                 tr.innerHTML = `
-                    <td class="font-medium text-blue-600 cursor-pointer ${teamColorClass}" onclick="window.openSiglaVacationModal('${emp.id}')">
+                    <td class="font-medium text-blue-600 ${isPast ? '' : 'cursor-pointer'} ${teamColorClass}" onclick="${isPast ? "window.showMessageBox('Não é permitido alterar meses anteriores.', 3000)" : `window.openSiglaVacationModal('${emp.id}')`}">
                         ${emp.name}
                     </td>
                     <td>${emp.role}</td>
                     <td>${emp.council}</td>
-                    <td class="cursor-pointer hover:bg-gray-200 transition-colors" onclick="window.editWorkShift(this, '${emp.id}')" title="Clique para editar">${emp.workShift || ''}</td>
+                    <td class="${isPast ? '' : 'cursor-pointer hover:bg-gray-200 transition-colors'}" 
+                        onclick="if(!isPastMonthView()) window.editWorkShift(this, '${emp.id}'); else window.showMessageBox('Não é permitido alterar meses anteriores.', 3000);" 
+                        title="${isPast ? '' : 'Clique para editar'}">
+                        ${emp.workShift || ''}
+                    </td>
                 `;
                 for (let i = 1; i <= daysInMonth; i++) {
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -855,6 +897,10 @@
                         }
                         
                         td.addEventListener('click', (event) => {
+                            if (isPast) {
+                                window.showMessageBox('Não é permitido alterar a escala de meses anteriores.', 3000);
+                                return;
+                            }
                             editDaySchedule(event.target, emp.id, dateKey);
                         });
 
@@ -879,7 +925,7 @@
             const currentSiglas = cell.textContent;
             const input = document.createElement('input');
             input.type = 'text';
-            input.className = 'w-full text-center border rounded';
+            input.className = 'w-full text-center border border-blue-400 rounded outline-none py-1';
             input.value = currentSiglas;
             input.style.fontSize = '0.75rem';
             cell.textContent = '';
@@ -965,6 +1011,11 @@
 
         // --- Ações de Funcionário ---
         function addEmployee() {
+            if (isPastMonthView()) {
+                window.showMessageBox('Navegue até o mês atual para adicionar funcionários.', 4000);
+                return;
+            }
+
             const name = document.getElementById('employeeName').value.trim();
             let role = document.getElementById('employeeRole').value.trim();
             const customRole = document.getElementById('customEmployeeRole').value.trim();
@@ -1006,6 +1057,10 @@
         }
 
         window.deleteEmployee = function(id) {
+            if (isPastMonthView()) {
+                window.showMessageBox('Navegue até o mês atual para excluir funcionários.', 4000);
+                return;
+            }
             if (confirm('Tem certeza que deseja excluir este funcionário?')) {
                 employees = employees.filter(emp => emp.id !== id);
                 saveEmployees();
@@ -1017,6 +1072,11 @@
 
         // --- Funções de Modal ---
         window.openSiglaVacationModal = function(employeeId) {
+            if (isPastMonthView()) {
+                window.showMessageBox('Não é permitido alterar dados em meses anteriores.', 3000);
+                return;
+            }
+
             currentEditingEmployeeId = employeeId;
             const employee = employees.find(emp => emp.id === employeeId);
             if (employee) {
@@ -1050,6 +1110,8 @@
         }
 
         function applySiglaMonth() {
+            if (isPastMonthView()) return;
+
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
             if (selectedSiglas.length === 0) {
                 window.showMessageBox('Por favor, selecione ao menos uma sigla.', 3000);
@@ -1082,6 +1144,8 @@
         }
 
         function clearSiglasForMonth() {
+            if (isPastMonthView()) return;
+
             if (confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionário para o mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1102,11 +1166,24 @@
         }
         
         function applyLeaveOrVacation(type) {
+            if (isPastMonthView()) return;
+
             const startDate = document.getElementById('dateRangeStart').value;
             const endDate = document.getElementById('dateRangeEnd').value;
             
             if (!startDate || !endDate) {
                 window.showMessageBox(`Por favor, selecione as datas de início e fim.`, 4000);
+                return;
+            }
+
+            // Evitar criar licenças/férias que iniciem em meses anteriores (mesmo estando na view atual)
+            const startParts = startDate.split('-').map(Number);
+            const leaveStart = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+            const now = new Date();
+            const realMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            
+            if (leaveStart < realMonthStart) {
+                window.showMessageBox('Não é permitido adicionar licenças ou férias com início em meses anteriores ao atual.', 5000);
                 return;
             }
 
@@ -1143,6 +1220,8 @@
         }
         
         function clearVacation() {
+            if (isPastMonthView()) return;
+
             if (confirm('Tem certeza que deseja limpar as férias deste funcionário no mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1165,6 +1244,8 @@
         }
 
         function clearLeave() {
+            if (isPastMonthView()) return;
+
             if (confirm('Tem certeza que deseja limpar as folgas e licenças deste funcionário no mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1188,17 +1269,40 @@
 
 
         function clearEmployeeSchedule() {
-            if (confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário? Isso é irreversível.')) {
+            if (isPastMonthView()) return;
+
+            if (confirm('Tem certeza que deseja limpar toda a escala e férias deste funcionário no mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
 
                 const employee = employees[employeeIndex];
-                employee.schedule = {};
-                employee.vacations = [];
-                employee.leaves = [];
+                
+                // Em vez de limpar tudo, limpa só do mês selecionado pra proteger histórico
+                const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    if (employee.schedule && employee.schedule[dateKey]) {
+                        delete employee.schedule[dateKey];
+                    }
+                }
+                
+                const currentMonthStart = new Date(currentYear, currentMonth, 1);
+                const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+                if (employee.vacations) {
+                    employee.vacations = employee.vacations.filter(vacation => {
+                        return new Date(vacation.end) < currentMonthStart || new Date(vacation.start) > currentMonthEnd;
+                    });
+                }
+                if (employee.leaves) {
+                    employee.leaves = employee.leaves.filter(leave => {
+                        return new Date(leave.end) < currentMonthStart || new Date(leave.start) > currentMonthEnd;
+                    });
+                }
+
                 saveEmployees();
                 renderSchedule();
-                window.showMessageBox('Escala e férias do funcionário limpas.');
+                window.showMessageBox('Escala e férias do funcionário no mês atual foram limpas.');
                 window.closeSiglaVacationModal();
             }
         }
@@ -1298,6 +1402,11 @@
         }
         
         function copyScheduleToNextMonth() {
+            if (isPastMonthView()) {
+                window.showMessageBox('Navegue até o mês atual para copiar uma escala.', 4000);
+                return;
+            }
+
             if (employees.length === 0) {
                 window.showMessageBox('Não há funcionários para copiar a escala.', 3000);
                 return;
@@ -1637,8 +1746,17 @@
             document.getElementById('copyScheduleBtn').addEventListener('click', copyScheduleToNextMonth);
             document.getElementById('saveScheduleBtn').addEventListener('click', saveAllData);
             document.getElementById('manageSiglasBtn').addEventListener('click', openManageSiglasModal);
-            document.getElementById('monthlyObservations').addEventListener('input', saveMonthlyObservations);
             document.getElementById('addSiglaBtn').addEventListener('click', addSigla);
+            
+            // Impede a alteração da observação do mês se for passado
+            document.getElementById('monthlyObservations').addEventListener('input', () => {
+                if (isPastMonthView()) {
+                    loadMonthlyObservations(); // Reverte o que foi digitado
+                    window.showMessageBox('Não é permitido alterar observações de meses anteriores.', 3000);
+                    return;
+                }
+                saveMonthlyObservations();
+            });
 
             renderCurrentMonthYear();
         });
