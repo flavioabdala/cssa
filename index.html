@@ -854,7 +854,7 @@
                     <td>${emp.council}</td>
                     <td class="${isPast ? '' : 'cursor-pointer hover:bg-gray-200 transition-colors'}" 
                         onclick="if(!isPastMonthView()) window.editWorkShift(this, '${emp.id}'); else window.showMessageBox('Não é permitido alterar meses anteriores.', 3000);" 
-                        title="${isPast ? '' : 'Clique para editar'}">
+                        title="${isPast ? '' : 'Clique para editar o horário'}">
                         ${emp.workShift || ''}
                     </td>
                 `;
@@ -1373,12 +1373,13 @@
             });
         }
 
-        // --- Funcionalidade de Feriado Dinâmico ---
+        // --- Funcionalidade de Feriado Dinâmico Atualizada ---
         function toggleCustomHoliday(day) {
             const key = `${currentYear}-${currentMonth + 1}`;
             const isDayCustomHoliday = customHolidays[key] && customHolidays[key].includes(day);
 
             if (isDayCustomHoliday) {
+                // Ao remover o feriado
                 if (confirm(`Deseja remover o feriado do dia ${day}?`)) {
                     customHolidays[key] = customHolidays[key].filter(d => d !== day);
                     if (customHolidays[key].length === 0) {
@@ -1389,14 +1390,70 @@
                     window.showMessageBox(`Feriado do dia ${day} removido.`);
                 }
             } else {
-                if (confirm(`Deseja marcar o dia ${day} como feriado?`)) {
+                // Ao adicionar o feriado
+                if (confirm(`Deseja marcar o dia ${day} como feriado? Todas as marcações (exceto férias) serão apagadas para todos os funcionários.`)) {
                     if (!customHolidays[key]) {
                         customHolidays[key] = [];
                     }
                     customHolidays[key].push(day);
+
+                    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const targetDate = new Date(currentYear, currentMonth, day);
+
+                    // Limpa as escalas e licenças, mas preserva férias
+                    employees.forEach(emp => {
+                        // 1. Apaga a marcação normal de escala (as siglas digitadas)
+                        if (emp.schedule && emp.schedule[dateStr]) {
+                            delete emp.schedule[dateStr];
+                        }
+
+                        // 2. Quebra/Remove Folgas (FO) e Licenças (LM) que cruzem esse dia
+                        if (emp.leaves && emp.leaves.length > 0) {
+                            let newLeaves = [];
+                            emp.leaves.forEach(leave => {
+                                const startParts = leave.start.split('-').map(Number);
+                                const endParts = leave.end.split('-').map(Number);
+                                const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+                                const endDate = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+
+                                startDate.setHours(0,0,0,0);
+                                endDate.setHours(0,0,0,0);
+                                targetDate.setHours(0,0,0,0);
+
+                                if (targetDate >= startDate && targetDate <= endDate) {
+                                    // O feriado cai no meio dessa licença/folga, então dividimos ela
+                                    const beforeEnd = new Date(targetDate);
+                                    beforeEnd.setDate(beforeEnd.getDate() - 1);
+                                    if (startDate <= beforeEnd) {
+                                        newLeaves.push({
+                                            start: leave.start,
+                                            end: `${beforeEnd.getFullYear()}-${String(beforeEnd.getMonth()+1).padStart(2,'0')}-${String(beforeEnd.getDate()).padStart(2,'0')}`,
+                                            type: leave.type
+                                        });
+                                    }
+
+                                    const afterStart = new Date(targetDate);
+                                    afterStart.setDate(afterStart.getDate() + 1);
+                                    if (afterStart <= endDate) {
+                                        newLeaves.push({
+                                            start: `${afterStart.getFullYear()}-${String(afterStart.getMonth()+1).padStart(2,'0')}-${String(afterStart.getDate()).padStart(2,'0')}`,
+                                            end: leave.end,
+                                            type: leave.type
+                                        });
+                                    }
+                                } else {
+                                    // A licença/folga não bate com o dia do feriado, mantemos intacta
+                                    newLeaves.push(leave);
+                                }
+                            });
+                            emp.leaves = newLeaves;
+                        }
+                    });
+
                     saveCustomHolidays();
+                    saveEmployees();
                     renderSchedule();
-                    window.showMessageBox(`Dia ${day} marcado como feriado.`);
+                    window.showMessageBox(`Dia ${day} marcado como feriado. Escalas e licenças foram limpas.`);
                 }
             }
         }
@@ -1553,7 +1610,7 @@
                         .printable-table td:nth-child(3) { width: 6%; font-weight: bold; color: #000; }
                         .printable-table th:nth-child(4) { width: 5%; }
                         .printable-table td:nth-child(4) { width: 5%; font-weight: bold; color: #000; }
-                        .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) {
+                        .printable-table th:nth-child(n+5), .printable-table td:nth-child(n+5) { /* Dias - Ocupam o restante do espaço */
                             width: auto;
                         }
                         
