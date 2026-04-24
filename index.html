@@ -11,8 +11,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; /* Light blue-gray background */
-            color: #334155;
-            /* Darker text */
+            color: #334155; /* Darker text */
         }
         .container {
             max-width: 1200px;
@@ -23,8 +22,7 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .header {
-            background-color: #4a90e2;
-            /* Blue header */
+            background-color: #4a90e2; /* Blue header */
             color: white;
             padding: 1.5rem;
             border-radius: 0.75rem;
@@ -43,8 +41,7 @@
             background-color: #357ABD;
         }
         .btn-secondary {
-            background-color: #64748b;
-            /* Gray */
+            background-color: #64748b; /* Gray */
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -54,8 +51,7 @@
             background-color: #475569;
         }
         .btn-danger {
-            background-color: #ef4444;
-            /* Red */
+            background-color: #ef4444; /* Red */
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -65,8 +61,7 @@
             background-color: #dc2626;
         }
         .input-field {
-            border: 1px solid #cbd5e1;
-            /* Light gray border */
+            border: 1px solid #cbd5e1; /* Light gray border */
             padding: 0.75rem;
             border-radius: 0.5rem;
             width: 100%;
@@ -94,18 +89,13 @@
             position: relative;
         }
         #manageSiglasModal .modal-content {
-            max-height: 90vh;
-            /* Set max height for the modal */
-            display: flex;
-            /* Flex container for content */
-            flex-direction: column;
-            /* Stack content vertically */
+            max-height: 90vh; /* Set max height for the modal */
+            display: flex; /* Flex container for content */
+            flex-direction: column; /* Stack content vertically */
         }
         #siglasList {
-            overflow-y: auto;
-            /* Add vertical scrollbar */
-            flex-grow: 1;
-            /* Allow list to take up remaining space */
+            overflow-y: auto; /* Add vertical scrollbar */
+            flex-grow: 1; /* Allow list to take up remaining space */
             margin-top: 1rem;
         }
         .close-button {
@@ -130,63 +120,49 @@
             min-width: 800px; /* Ensure table doesn't get too small on narrow screens */
         }
         .schedule-table th, .schedule-table td {
-            border: 1px solid #e2e8f0;
-            /* Light gray table borders */
-            padding: 0.25rem;
-            /* Smaller padding */
+            border: 1px solid #e2e8f0; /* Light gray table borders */
+            padding: 0.25rem; /* Smaller padding */
             text-align: center;
-            white-space: nowrap;
-            /* Prevent text wrapping in cells */
-            font-size: 0.75rem;
-            /* text-xs */
+            white-space: nowrap; /* Prevent text wrapping in cells */
+            font-size: 0.75rem; /* text-xs */
         }
         .schedule-table th {
-            background-color: #e2e8f0;
-            /* Light gray header */
+            background-color: #e2e8f0; /* Light gray header */
             font-weight: 600;
-            cursor: pointer;
-            /* To show that the day column is clickable */
+            cursor: pointer; /* To show that the day column is clickable */
         }
         .schedule-table thead th div {
-            font-size: 0.6rem;
-            /* Extra small for day letter */
+            font-size: 0.6rem; /* Extra small for day letter */
         }
         .schedule-table tbody tr:hover {
-            background-color: #f8fafc;
-            /* Lighter on hover */
+            background-color: #f8fafc; /* Lighter on hover */
         }
         .weekend, .holiday {
-            background-color: #cbd5e1;
-            /* Darker gray for weekends/holidays */
+            background-color: #cbd5e1; /* Darker gray for weekends/holidays */
             color: #475569;
         }
         .vacation {
-            background-color: #93c5fd;
-            /* Light blue for vacations */
+            background-color: #93c5fd; /* Light blue for vacations */
             color: #1e40af;
             font-weight: 600;
         }
         /* New colors for LM/FO */
         .licenca {
-            background-color: #fcd34d;
-            /* Yellow */
+            background-color: #fcd34d; /* Yellow */
             color: #78350f;
             font-weight: 600;
         }
         .folga {
-            background-color: #6b7280;
-            /* Dark gray */
+            background-color: #6b7280; /* Dark gray */
             color: #ffffff;
             font-weight: 600;
         }
 
         /* Employee List Container */
         #employeeListContainer {
-            max-height: 300px;
-            /* Adjust as needed */
+            max-height: 300px; /* Adjust as needed */
             overflow-y: auto;
-            padding-right: 1rem;
-            /* Add some padding to prevent scrollbar from hiding content */
+            padding-right: 1rem; /* Add some padding to prevent scrollbar from hiding content */
         }
 
         .printable-table {
@@ -232,15 +208,12 @@
         @media print {
             /* Corrigindo a impressão para caber em uma única página */
             @page {
-                size: A4 landscape;
-                /* Definindo a orientação da página */
-                margin: 0.5cm;
-                /* Margem ainda menor */
+                size: A4 landscape; /* Definindo a orientação da página */
+                margin: 0.5cm; /* Margem ainda menor */
             }
 
             body {
-                font-size: 8px;
-                /* Font size maior para o print */
+                font-size: 8px; /* Font size maior para o print */
                 margin: 0;
                 padding: 0;
             }
@@ -276,15 +249,12 @@
                 table-layout: fixed; /* Fixa o layout da tabela */
             }
             .printable-table th, .printable-table td {
-                font-size: 9px;
-                /* Font size ajustada */
-                padding: 1px;
-                /* Padding menor */
+                font-size: 9px; /* Font size ajustada */
+                padding: 1px; /* Padding menor */
                 text-align: center;
                 white-space: normal;
                 word-break: break-word; /* Quebra palavras longas */
-                height: 12px;
-                /* Reduzindo a altura da linha */
+                height: 12px; /* Reduzindo a altura da linha */
             }
             /* AJUSTE: Largura das colunas para impressão (mais finas) */
             .printable-table th:nth-child(1) { width: 18%; }
@@ -376,7 +346,7 @@
                 </thead>
                 <tbody id="scheduleBody">
                     </tbody>
-            </table>
+             </table>
         </div>
 
         <div class="bg-blue-50 p-6 rounded-lg shadow-md mt-8">
@@ -395,7 +365,7 @@
                     <option value="Outro">Outro</option>
                 </select>
                 <input type="text" id="customEmployeeRole" placeholder="Função Personalizada" class="input-field hidden">
-                <input type="text" id="employeeCouncil" placeholder="Registro do Conselho" class="input-field">
+                 <input type="text" id="employeeCouncil" placeholder="Registro do Conselho" class="input-field">
                 <input type="text" id="employeeWorkShift" placeholder="Horário de Trabalho (Ex: 08h-17h)" class="input-field">
             </div>
             <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -451,12 +421,12 @@
                         <button id="applyVacationBtn" class="btn-primary w-full">Aplicar Férias</button>
                         <button id="applyFolgaBtn" class="btn-secondary w-full">Aplicar Folga (FO)</button>
                         <button id="applyLicencaBtn" class="btn-secondary w-full">Aplicar Licença (LM)</button>
-                    </div>
+                     </div>
                     <button id="clearVacationBtn" class="btn-danger w-full mt-4">Limpar Férias deste Mês</button>
                     <button id="clearLeaveBtn" class="btn-danger w-full mt-2">Limpar Licenças e Folgas deste Mês</button>
                 </div>
             </div>
-            <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6">Limpar Toda a Escala do Funcionário</button>
+             <button id="clearEmployeeScheduleBtn" class="btn-danger w-full mt-6">Limpar Toda a Escala do Funcionário</button>
         </div>
     </div>
     
@@ -474,7 +444,7 @@
             </div>
             <div id="siglasList" class="mt-4">
                 <h4 class="text-lg font-medium mb-2 text-gray-700">Siglas Atuais:</h4>
-                <ul id="siglasUl" class="space-y-2">
+                 <ul id="siglasUl" class="space-y-2">
                     </ul>
             </div>
         </div>
@@ -504,10 +474,12 @@
         let auth;
         let userId; // Será definido após a autenticação
         let isAuthReady = false;
+
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let employees = [];
@@ -525,10 +497,19 @@
             { id: '8', abbr: 'T', name: 'Totem', color: '#a0aec0' }, // Gray-500
             { id: '9', abbr: 'C', name: 'Consultórios', color: '#a0e4a7' }, // Custom light green
         ];
+        
         const specialSiglas = ['FO', 'LM'];
         const dayOfWeekLetters = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
         let sortDirection = {}; // Armazena a direção de ordenação para cada coluna
         let currentSortKey = 'name';
+
+        // FUNÇÃO DE TRAVA: Impede edição em meses passados
+        function isHistoricalMonth() {
+            const today = new Date();
+            const realYear = today.getFullYear();
+            const realMonth = today.getMonth();
+            return currentYear < realYear || (currentYear === realYear && currentMonth < realMonth);
+        }
 
         // --- Funções Utilitárias ---
         window.showMessageBox = function(message, duration = 3000) {
@@ -629,12 +610,16 @@
             return dayOfWeek === 0 || dayOfWeek === 6;
         }
         
-        // Brazilian National Holidays (example for 2025)
+        // Brazilian National Holidays (example for 2025/2026)
         const nationalHolidays = [
             '2025-01-01', '2025-03-03', '2025-03-04', '2025-04-18', '2025-04-21', 
             '2025-05-01', '2025-06-19', '2025-09-07', '2025-10-12', '2025-11-02', 
-            '2025-11-15', '2025-12-25'
+            '2025-11-15', '2025-12-25',
+            '2026-01-01', '2026-02-16', '2026-02-17', '2026-04-03', '2026-04-21',
+            '2026-05-01', '2026-06-04', '2026-09-07', '2026-10-12', '2026-11-02',
+            '2026-11-15', '2026-12-25'
         ];
+        
         function isHoliday(year, month, day) {
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isNational = nationalHolidays.includes(dateString);
@@ -701,7 +686,6 @@
             }
         }
         
-        // Nova: Função de ordenação geral
         function sortEmployees(empArray, key, direction) {
             return [...empArray].sort((a, b) => {
                 const valueA = a[key] || '';
@@ -715,7 +699,6 @@
             });
         }
         
-        // Nova: Função de filtro
         function filterEmployees() {
             const filterName = document.getElementById('filterName').value.toLowerCase();
             const filterRole = document.getElementById('filterRole').value.toLowerCase();
@@ -825,20 +808,17 @@
                     if (isVacation(emp, currentYear, currentMonth, i)) {
                         td.classList.add('vacation');
                         td.textContent = 'FÉRIAS';
-                        const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
-                        if (!prevDayIsVacation) {
-                            let span = 1;
-                            let j = i + 1;
-                            while (j <= daysInMonth && isVacation(emp, currentYear, currentMonth, j)) {
-                                span++;
-                                j++;
-                            }
-                            td.colSpan = span;
-                            tr.appendChild(td);
-                            i += (span - 1);
-                        } else {
-                            continue;
+                        
+                        let span = 1;
+                        let j = i + 1;
+                        while (j <= daysInMonth && isVacation(emp, currentYear, currentMonth, j)) {
+                            span++;
+                            j++;
                         }
+                        td.colSpan = span;
+                        tr.appendChild(td);
+                        i += (span - 1);
+                        
                     } else if (isLeave(emp, currentYear, currentMonth, i, 'LM')) {
                         td.classList.add('licenca');
                         td.textContent = 'LM';
@@ -850,6 +830,7 @@
                     } else {
                         const siglas = emp.schedule && emp.schedule[dateKey] ? emp.schedule[dateKey] : [];
                         td.textContent = Array.isArray(siglas) ? siglas.join(', ') : siglas;
+                        
                         if (isWeekend(emp, currentYear, currentMonth, i) || isHoliday(currentYear, currentMonth, i)) {
                             td.classList.add('weekend');
                         }
@@ -867,11 +848,17 @@
         }
 
         function editDaySchedule(cell, employeeId, dateKey) {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido alterar dados de meses anteriores.', 4000);
+                return;
+            }
+
             const employee = employees.find(e => e.id === employeeId);
             if (!employee) return;
 
             const dateParts = dateKey.split('-').map(Number);
             const day = dateParts[2];
+            
             if (!isWorkday(employee, currentYear, currentMonth, day) || isVacation(employee, currentYear, currentMonth, day) || isLeave(employee, currentYear, currentMonth, day, 'LM') || isLeave(employee, currentYear, currentMonth, day, 'FO')) {
                  return;
             }
@@ -901,6 +888,7 @@
                 saveEmployees();
                 renderSchedule();
             };
+            
             input.addEventListener('blur', saveSchedule);
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -910,9 +898,13 @@
         }
 
         window.editWorkShift = function(cell, employeeId) {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido alterar dados de meses anteriores.', 4000);
+                return;
+            }
+
             // Evita criar múltiplos inputs se o usuário clicar várias vezes
             if (cell.querySelector('input')) return;
-
             const employee = employees.find(e => e.id === employeeId);
             if (!employee) return;
 
@@ -931,7 +923,6 @@
             // Função para salvar a alteração
             const saveShift = () => {
                 const newShift = input.value.trim();
-                
                 // Só salva se houver alteração para evitar re-renderizações desnecessárias
                 if (newShift !== currentShift) {
                     employee.workShift = newShift;
@@ -940,7 +931,7 @@
                 }
                 renderSchedule(); // Atualiza a tabela voltando o texto normal
             };
-
+            
             // Salva ao clicar fora (blur) ou apertar Enter
             input.addEventListener('blur', saveShift);
             input.addEventListener('keypress', (e) => {
@@ -971,6 +962,7 @@
             const council = document.getElementById('employeeCouncil').value.trim();
             const workShift = document.getElementById('employeeWorkShift').value.trim();
             const team = document.getElementById('employeeTeam').value.trim();
+            
             if (role === 'Outro') {
                 role = customRole;
             }
@@ -1050,6 +1042,11 @@
         }
 
         function applySiglaMonth() {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido alterar dados de meses anteriores.', 4000);
+                return;
+            }
+
             const selectedSiglas = Array.from(document.querySelectorAll('#siglaCheckboxesMonth input[type="checkbox"]:checked')).map(cb => cb.value);
             if (selectedSiglas.length === 0) {
                 window.showMessageBox('Por favor, selecione ao menos uma sigla.', 3000);
@@ -1082,6 +1079,11 @@
         }
 
         function clearSiglasForMonth() {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido alterar dados de meses anteriores.', 4000);
+                return;
+            }
+
             if (confirm('Tem certeza que deseja limpar TODAS as siglas deste funcionário para o mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1102,6 +1104,11 @@
         }
         
         function applyLeaveOrVacation(type) {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido adicionar registros ao histórico.', 4000);
+                return;
+            }
+
             const startDate = document.getElementById('dateRangeStart').value;
             const endDate = document.getElementById('dateRangeEnd').value;
             
@@ -1131,8 +1138,7 @@
             while (tempDate < end) {
                 const dateKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
                 if (employee.schedule && employee.schedule[dateKey]) {
-                    delete employee.schedule[dateKey];
-                    // Remove a sigla de trabalho para o período de licença/folga/férias
+                    delete employee.schedule[dateKey]; // Remove a sigla de trabalho para o período de licença/folga/férias
                 }
                 tempDate.setDate(tempDate.getDate() + 1);
             }
@@ -1143,6 +1149,11 @@
         }
         
         function clearVacation() {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido alterar dados de meses anteriores.', 4000);
+                return;
+            }
+
             if (confirm('Tem certeza que deseja limpar as férias deste funcionário no mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1154,9 +1165,9 @@
                 employee.vacations = (employee.vacations || []).filter(vacation => {
                     const vacationStart = new Date(vacation.start);
                     const vacationEnd = new Date(vacation.end);
-                    
                     return vacationEnd < currentMonthStart || vacationStart > currentMonthEnd;
                 });
+                
                 saveEmployees();
                 renderSchedule();
                 window.showMessageBox('Férias do funcionário no mês atual limpas.');
@@ -1165,6 +1176,11 @@
         }
 
         function clearLeave() {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido alterar dados de meses anteriores.', 4000);
+                return;
+            }
+
             if (confirm('Tem certeza que deseja limpar as folgas e licenças deste funcionário no mês atual?')) {
                 const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployeeId);
                 if (employeeIndex === -1) return;
@@ -1176,9 +1192,9 @@
                 employee.leaves = (employee.leaves || []).filter(leave => {
                     const leaveStart = new Date(leave.start);
                     const leaveEnd = new Date(leave.end);
-                    
                     return leaveEnd < currentMonthStart || leaveStart > currentMonthEnd;
                 });
+                
                 saveEmployees();
                 renderSchedule();
                 window.showMessageBox('Licenças e folgas do funcionário no mês atual limpas.');
@@ -1271,6 +1287,11 @@
 
         // --- Funcionalidade de Feriado Dinâmico ---
         function toggleCustomHoliday(day) {
+            if (isHistoricalMonth()) {
+                window.showMessageBox('Não é permitido alterar feriados passados.', 4000);
+                return;
+            }
+
             const key = `${currentYear}-${currentMonth + 1}`;
             const isDayCustomHoliday = customHolidays[key] && customHolidays[key].includes(day);
 
@@ -1340,6 +1361,7 @@
                         const nextMonthDateKey = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                         // Verifica se o dia no próximo mês já tem férias, folga ou licença
                         const isDayOccupiedInNextMonth = isVacation(emp, nextYear, nextMonth, i) || isLeave(emp, nextYear, nextMonth, i, 'LM') || isLeave(emp, nextYear, nextMonth, i, 'FO');
+                        
                         if (!isDayOccupiedInNextMonth && isWorkday(emp, nextYear, nextMonth, i)) {
                             const dayOfWeek = new Date(nextYear, nextMonth, i).getDay();
                             const copiedSigla = currentMonthWorkdaysSchedule[dayOfWeek];
@@ -1350,20 +1372,22 @@
                             }
                         } else if (isDayOccupiedInNextMonth) {
                             // Se o dia está ocupado (férias/folga/licença), remove qualquer sigla de trabalho que possa ter sido copiada acidentalmente
-                            delete emp.schedule[nextMonthDateKey];
+                             delete emp.schedule[nextMonthDateKey];
                         }
                         // Se não é dia de trabalho e não está ocupado, o schedule para esse dia deve ser vazio
                         else if (!isWorkday(emp, nextYear, nextMonth, i)) {
-                            delete emp.schedule[nextMonthDateKey];
+                             delete emp.schedule[nextMonthDateKey];
                         }
                     }
                 });
+                
                 saveEmployees();
                 let message = 'Escala copiada com sucesso para o próximo mês!';
                 if (employeesToWarn.length > 0) {
-                    message += `\n\nAtenção: A escala de ${employeesToWarn.join(', ')} não foi copiada porque não havia dados de trabalho no mês anterior. Por favor, preencha manualmente.`;
+                    message += `\n\nAtenção: A escala de ${employeesToWarn.join(', ')} não foi copiada porque não havia dados de trabalho no mês anterior.\nPor favor, preencha manualmente.`;
                 }
                 window.showMessageBox(message, 7000);
+                
                 currentMonth = nextMonth;
                 currentYear = nextYear;
                 renderSchedule();
@@ -1484,26 +1508,27 @@
                                             <td>${emp.role}</td>
                                             <td>${emp.council}</td>
                                             <td>${emp.workShift || ''}</td>`;
+                                        
                                         for (let i = 1; i <= getDaysInMonth(currentYear, currentMonth); i++) {
                                             const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                                             const isDayWeekend = isWeekend(emp, currentYear, currentMonth, i);
                                             const isDayHoliday = isHoliday(currentYear, currentMonth, i);
                                             let cellContent = '';
                                             let cellClasses = '';
+                                            
                                             if (isVacation(emp, currentYear, currentMonth, i)) {
                                                 cellContent = 'FÉRIAS';
                                                 cellClasses = 'vacation';
-                                                const prevDayIsVacation = isVacation(emp, currentYear, currentMonth, i - 1);
-                                                if (!prevDayIsVacation) {
-                                                    let span = 1;
-                                                    let j = i + 1;
-                                                    while (j <= getDaysInMonth(currentYear, currentMonth) && isVacation(emp, currentYear, currentMonth, j)) {
-                                                        span++;
-                                                        j++;
-                                                    }
-                                                    rowHtml += `<td colspan="${span}" class="${cellClasses}">${cellContent}</td>`;
-                                                    i += (span - 1);
+                                                
+                                                let span = 1;
+                                                let j = i + 1;
+                                                while (j <= getDaysInMonth(currentYear, currentMonth) && isVacation(emp, currentYear, currentMonth, j)) {
+                                                    span++;
+                                                    j++;
                                                 }
+                                                rowHtml += `<td colspan="${span}" class="${cellClasses}">${cellContent}</td>`;
+                                                i += (span - 1);
+                                                
                                             } else if (isLeave(emp, currentYear, currentMonth, i, 'LM')) {
                                                 cellContent = 'LM';
                                                 cellClasses = 'licenca';
